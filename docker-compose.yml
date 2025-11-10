@@ -1,0 +1,19 @@
+version: "3.8"
+services:
+  rayan_admin:
+    build: .
+    container_name: rayan_admin
+    environment:
+      - VIRTUAL_HOST=admin.medlife.tj
+      - LETSENCRYPT_HOST=admin.medlife.tj
+      - LETSENCRYPT_EMAIL=afprojects052000@gmail.com
+      - NODE_ENV=production
+    expose:
+      - "3000"
+    restart: unless-stopped
+    networks:
+      - proxy-network
+
+networks:
+  proxy-network:
+    external: true

@@ -1,0 +1,116 @@
+@import "tailwindcss";
+
+:root {
+  --primary: #10b981;
+  --primary-light: #34d399;
+  --primary-dark: #059669;
+  --primary-foreground: #ffffff;
+  --background: #f9fafb;
+  --foreground: #111827;
+  --card: #ffffff;
+  --card-foreground: #111827;
+  --popover: #ffffff;
+  --popover-foreground: #111827;
+  --secondary: #f3f4f6;
+  --secondary-foreground: #111827;
+  --muted: #f3f4f6;
+  --muted-foreground: #6b7280;
+  --accent: #f3f4f6;
+  --accent-foreground: #111827;
+  --border: #e5e7eb;
+  --input: #e5e7eb;
+  --ring: #10b981;
+  --radius: 0.5rem;
+}
+
+.dark {
+  --primary: #10b981;
+  --primary-light: #34d399;
+  --primary-dark: #059669;
+  --primary-foreground: #ffffff;
+  --background: #111827;
+  --foreground: #f9fafb;
+  --card: #1f2937;
+  --card-foreground: #f9fafb;
+  --popover: #1f2937;
+  --popover-foreground: #f9fafb;
+  --secondary: #374151;
+  --secondary-foreground: #f9fafb;
+  --muted: #374151;
+  --muted-foreground: #9ca3af;
+  --accent: #374151;
+  --accent-foreground: #f9fafb;
+  --border: #374151;
+  --input: #374151;
+  --ring: #10b981;
+}
+
+* {
+  border-color: var(--border);
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-feature-settings: "rlig" 1, "calt" 1;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Стили для стеклянного эффекта */
+.glass {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.dark .glass {
+  background: rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Анимации */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-in {
+  animation: fadeIn 0.5s ease-out;
+}
+
+/* Кастомные стили для элементов */
+.card-hover {
+  transition: all 0.3s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary) 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.btn-outline {
+  border: 1px solid var(--border);
+  transition: all 0.3s ease;
+}
+
+.btn-outline:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
