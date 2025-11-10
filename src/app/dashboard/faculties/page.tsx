@@ -17,7 +17,6 @@ import { useTheme } from '../../../../contexts/theme-context';
 
 type LangCode = 'tj' | 'ru' | 'en' | 'uz' | 'kg' | 'kz';
 
-
 const LANGS: { code: LangCode; label: string }[] = [
   { code: 'tj', label: 'Тоҷикӣ (tj)' },
   { code: 'ru', label: 'Русский (ru)' },
@@ -31,12 +30,10 @@ const LS_LANG_KEY = 'app_lang';
 
 export default function FacultiesPage(): JSX.Element {
   const { theme } = useTheme();
-  const router = useRouter();
   const searchParams = useSearchParams();
 
   const university_id = parseInt(searchParams.get('university_id') || '0', 10);
   const initialLang = (searchParams.get('lang') as LangCode) || 'tj';
-
   const [lang, setLang] = useState<LangCode>(initialLang);
 
   const [items, setItems] = useState<Faculty[]>([]);

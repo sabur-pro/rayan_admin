@@ -13,6 +13,7 @@ interface QuillEditorProps {
 
 interface QuillInstance {
   getContents: () => unknown;
+  setContents: (delta: unknown) => void;
   clipboard: {
     dangerouslyPasteHTML: (html: string) => void;
   };
@@ -189,7 +190,7 @@ export default function QuillEditor({ isOpen, onClose }: QuillEditorProps) {
         
         if (quillRef.current && delta.ops) {
           // Загружаем Delta в Quill
-          (quillRef.current as any).setContents(delta);
+          quillRef.current.setContents(delta);
           
           // Обновляем имя файла
           const baseName = file.name.replace('.quill.json', '').replace('.json', '');

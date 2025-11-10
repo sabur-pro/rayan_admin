@@ -66,10 +66,6 @@ export default function MaterialsPage() {
     });
   };
 
-  const getFileExtension = (path: string) => {
-    return path.split('.').pop()?.toLowerCase() || '';
-  };
-
   const handleMaterialClick = (material: Material) => {
     setSelectedMaterial(material);
   };
