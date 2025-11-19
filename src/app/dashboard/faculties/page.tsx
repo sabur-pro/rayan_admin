@@ -14,6 +14,7 @@ import { getSemesters } from '@/lib/semester';
 import { getSubjects } from '@/lib/subject';
 import type { Subject } from '../../../../types/subject';
 import { useTheme } from '../../../../contexts/theme-context';
+import CreateSubjectModal from '@/components/CreateSubjectModal';
 
 type LangCode = 'tj' | 'ru' | 'en' | 'uz' | 'kg' | 'kz';
 
@@ -47,7 +48,6 @@ export default function FacultiesPage(): JSX.Element {
   const [semestersLoading, setSemestersLoading] = useState(false);
   const [semestersError, setSemestersError] = useState<string | null>(null);
   const [selectedSemester, setSelectedSemester] = useState<Semester | null>(null);
-  const [page, setPage] = useState<number>(1);
   const [limit, setLimit] = useState<number>(10);
   const [totalCount, setTotalCount] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(false);
@@ -71,7 +71,7 @@ export default function FacultiesPage(): JSX.Element {
       setLoading(true);
       setError(null);
       try {
-        const res = await api.getFaculties(university_id, lang, page, limit);
+        const res = await api.getFaculties(university_id, lang, 1, limit);
         if (cancelled) return;
         setItems(res.data);
         setTotalCount(res.total_count);
@@ -90,7 +90,7 @@ export default function FacultiesPage(): JSX.Element {
     return () => {
       cancelled = true;
     };
-  }, [university_id, lang, page, limit]);
+  }, [university_id, lang, limit]);
 
   // Reset selections on faculty list change
   useEffect(() => {
@@ -135,22 +135,22 @@ export default function FacultiesPage(): JSX.Element {
   }, [totalCount, limit]);
 
   function handlePrev() {
-    setPage((p) => Math.max(1, p - 1));
+    // setPage((p) => Math.max(1, p - 1));
   }
   function handleNext() {
-    setPage((p) => Math.min(totalPages, p + 1));
+    // setPage((p) => Math.min(totalPages, p + 1));
   }
   function handleSelectLang(e: React.ChangeEvent<HTMLSelectElement>) {
     const val = e.target.value;
     if (isLangCode(val)) {
       setLang(val);
-      setPage(1); // сброс страницы при смене языка
+      // setPage(1); // сброс страницы при смене языка
     }
   }
   function handleLimitChange(e: React.ChangeEvent<HTMLSelectElement>) {
     const newLimit = parseInt(e.target.value, 10) || 10;
     setLimit(newLimit);
-    setPage(1);
+    // setPage(1);
   }
 
   return (
@@ -267,7 +267,7 @@ export default function FacultiesPage(): JSX.Element {
               </Card>
             ))}
         </div>
-  )}
+      )}
 
       {/* --- Курсы --- */}
       {selectedFaculty && !selectedCourse && (
@@ -369,45 +369,45 @@ export default function FacultiesPage(): JSX.Element {
       {!selectedFaculty && (
         <div className="flex items-center justify-between mt-4">
           <div className="text-sm text-muted-foreground">
-            Страница {page} из {totalPages}
+            Страница 1 из {totalPages}
           </div>
           <div className="flex items-center gap-2">
             <button
-              onClick={() => setPage(1)}
-              disabled={page === 1}
+              onClick={() => {}}
+              disabled={true}
               className="btn-outline px-3 py-1 rounded disabled:opacity-50"
               aria-label="Первая страница"
             >
               «1
             </button>
             <button
-              onClick={handlePrev}
-              disabled={page === 1}
+              onClick={() => {}}
+              disabled={true}
               className="btn-outline px-3 py-1 rounded disabled:opacity-50"
               aria-label="Предыдущая"
             >
               ‹
             </button>
-            {generatePageRange(page, totalPages, 5).map((p) => (
+            {generatePageRange(1, totalPages, 5).map((p) => (
               <button
                 key={p}
-                onClick={() => setPage(p)}
-                className={`px-3 py-1 rounded ${p === page ? 'btn-primary text-white' : 'btn-outline'}`}
+                onClick={() => {}}
+                className={`px-3 py-1 rounded ${p === 1 ? 'btn-primary text-white' : 'btn-outline'}`}
               >
                 {p}
               </button>
             ))}
             <button
-              onClick={handleNext}
-              disabled={page === totalPages}
+              onClick={() => {}}
+              disabled={true}
               className="btn-outline px-3 py-1 rounded disabled:opacity-50"
               aria-label="Следующая"
             >
               ›
             </button>
             <button
-              onClick={() => setPage(totalPages)}
-              disabled={page === totalPages}
+              onClick={() => {}}
+              disabled={true}
               className="btn-outline px-3 py-1 rounded disabled:opacity-50"
               aria-label="Последняя"
             >
@@ -452,22 +452,81 @@ function SubjectsBlock({ facultyId, courseId, semesterId, langCode, onBack }: {
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const observerTarget = React.useRef<HTMLDivElement>(null);
+  const loadingMore = React.useRef(false);
+
+  const loadSubjects = React.useCallback(
+    async (pageNum: number, append = false) => {
+      if (loadingMore.current) return;
+
+      if (!append) {
+        setLoading(true);
+      }
+      loadingMore.current = true;
+      setError(null);
+
+      try {
+        const res = await getSubjects({
+          lang_code: langCode,
+          faculty_id: facultyId,
+          course_id: courseId,
+          semester_id: semesterId,
+          page: pageNum,
+          limit: 10,
+        });
+
+        if (append) {
+          setSubjects((prev) => [...prev, ...res.data]);
+        } else {
+          setSubjects(res.data);
+        }
+
+        setHasMore(res.data.length === 10 && res.page * res.limit < res.total_count);
+      } catch (e: unknown) {
+        setError(e instanceof Error ? e.message : 'Ошибка при загрузке предметов');
+      } finally {
+        setLoading(false);
+        loadingMore.current = false;
+      }
+    },
+    [facultyId, courseId, semesterId, langCode]
+  );
 
   useEffect(() => {
-    setLoading(true);
-    setError(null);
-    getSubjects({
-      lang_code: langCode,
-      faculty_id: facultyId,
-      course_id: courseId,
-      semester_id: semesterId,
-      page: 1,
-      limit: 10,
-    })
-      .then((res) => setSubjects(res.data))
-      .catch((e) => setError(e.message || 'Ошибка при загрузке предметов'))
-      .finally(() => setLoading(false));
-  }, [facultyId, courseId, semesterId, langCode]);
+    setSubjects([]);
+    setPage(1);
+    setHasMore(true);
+    loadSubjects(1, false);
+  }, [facultyId, courseId, semesterId, langCode, loadSubjects]);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !loadingMore.current) {
+          setPage((prev) => {
+            const nextPage = prev + 1;
+            loadSubjects(nextPage, true);
+            return nextPage;
+          });
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    const currentTarget = observerTarget.current;
+    if (currentTarget) {
+      observer.observe(currentTarget);
+    }
+
+    return () => {
+      if (currentTarget) {
+        observer.unobserve(currentTarget);
+      }
+    };
+  }, [hasMore, loadSubjects]);
 
   const handleSubjectClick = (subjectId: number) => {
     console.log('Subject clicked:', subjectId);
@@ -483,13 +542,26 @@ function SubjectsBlock({ facultyId, courseId, semesterId, langCode, onBack }: {
     router.push(url);
   };
 
+  const handleSubjectCreated = (newSubject: Subject) => {
+    setSubjects([newSubject, ...subjects]);
+    setIsModalOpen(false);
+  };
+
   return (
     <div>
-      <div className="mb-4 flex items-center gap-4">
-        <button className="btn-outline px-3 py-1 rounded" onClick={onBack}>
-          ← Назад к семестрам
+      <div className="mb-4 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <button className="btn-outline px-3 py-1 rounded" onClick={onBack}>
+            ← Назад к семестрам
+          </button>
+          <h2 className="text-xl font-bold">Список предметов</h2>
+        </div>
+        <button
+          onClick={() => setIsModalOpen(true)}
+          className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
+        >
+          + Добавить предмет
         </button>
-        <h2 className="text-xl font-bold">Список предметов</h2>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {loading && <div className="col-span-full text-center">Загрузка...</div>}
@@ -519,6 +591,21 @@ function SubjectsBlock({ facultyId, courseId, semesterId, langCode, onBack }: {
           <div className="col-span-full text-center text-muted-foreground">Нет предметов</div>
         )}
       </div>
+
+      {hasMore && !error && (
+        <div ref={observerTarget} className="col-span-full text-center py-4">
+          {loadingMore.current && <div className="text-muted-foreground">Загрузка...</div>}
+        </div>
+      )}
+
+      <CreateSubjectModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onCreated={handleSubjectCreated}
+        course_id={courseId}
+        semester_id={semesterId}
+        faculty_id={facultyId}
+      />
     </div>
   );
 }

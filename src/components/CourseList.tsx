@@ -74,6 +74,7 @@ export default function CourseList() {
 
   useEffect(() => {
     fetchCourses();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, limit, numberFilter, langCodeFilter]);
 
   const handlePageChange = (newPage: number) => {

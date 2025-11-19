@@ -2,9 +2,10 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
-import { X, Download, Upload } from 'lucide-react';
+import { X, Download, Upload, ImagePlus } from 'lucide-react';
 import TurndownService from 'turndown';
 import 'react-quill/dist/quill.snow.css';
+import FileGallery from '@/components/FileGallery';
 
 interface QuillEditorProps {
   isOpen: boolean;
@@ -17,10 +18,13 @@ interface QuillInstance {
   clipboard: {
     dangerouslyPasteHTML: (html: string) => void;
   };
+  getSelection?: (value: boolean) => { index: number } | null;
+  insertEmbed?: (index: number, type: string, url: string, source: string) => void;
 }
 
 export default function QuillEditor({ isOpen, onClose }: QuillEditorProps) {
   const [fileName, setFileName] = useState('document.md');
+  const [showGallery, setShowGallery] = useState(false);
   const editorHostRef = useRef<HTMLDivElement>(null);
   const toolbarRef = useRef<HTMLDivElement>(null);
   const quillRef = useRef<QuillInstance | null>(null);
@@ -209,6 +213,14 @@ export default function QuillEditor({ isOpen, onClose }: QuillEditorProps) {
     event.target.value = '';
   };
 
+  const handleSelectFile = (url: string) => {
+    if (quillRef.current) {
+      const quill = quillRef.current;
+      const range = quill.getSelection?.(true) || { index: 0 };
+      quill.insertEmbed?.(range.index, 'image', url, 'user');
+    }
+  };
+
   const handleClose = () => {
     const html = editorHostRef.current?.querySelector('.ql-editor')?.innerHTML || '';
     const textContent = html.replace(/<[^>]*>/g, '').trim();
@@ -224,7 +236,7 @@ export default function QuillEditor({ isOpen, onClose }: QuillEditorProps) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex flex-col">
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[9999] flex flex-col">
       <div className="w-full h-full bg-background flex flex-col">
         {/* Верхняя панель */}
         <div className="border-b bg-background px-6 py-4 flex items-center justify-between shrink-0">
@@ -239,6 +251,18 @@ export default function QuillEditor({ isOpen, onClose }: QuillEditorProps) {
             />
           </div>
           <div className="flex items-center gap-3">
+            <button
+              onClick={() => setShowGallery(!showGallery)}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors font-medium ${
+                showGallery
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-accent hover:bg-accent/80'
+              }`}
+              title="Галерея файлов"
+            >
+              <ImagePlus className="w-5 h-5" />
+              Галерея
+            </button>
             <button 
               onClick={handleUploadDelta} 
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
@@ -285,10 +309,20 @@ export default function QuillEditor({ isOpen, onClose }: QuillEditorProps) {
           </div>
         </div>
 
-        {/* Редактор Quill на весь экран */}
-        <div className="flex-1 overflow-hidden flex flex-col quill-fullscreen">
-          <div ref={toolbarRef} className="ql-toolbar ql-snow"></div>
-          <div ref={editorHostRef} className="ql-container ql-snow" style={{ flex: 1 }}></div>
+        {/* Main content area with editor and gallery */}
+        <div className="flex-1 overflow-hidden flex">
+          {/* Редактор Quill */}
+          <div className="flex-1 overflow-hidden flex flex-col quill-fullscreen">
+            <div ref={toolbarRef} className="ql-toolbar ql-snow"></div>
+            <div ref={editorHostRef} className="ql-container ql-snow" style={{ flex: 1 }}></div>
+          </div>
+
+          {/* File Gallery Sidebar */}
+          {showGallery && (
+            <div className="w-96 border-l bg-background flex flex-col">
+              <FileGallery lang="ru" onSelectFile={handleSelectFile} />
+            </div>
+          )}
         </div>
       </div>
 

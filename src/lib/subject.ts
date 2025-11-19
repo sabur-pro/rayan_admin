@@ -28,3 +28,28 @@ export async function getSubjects({
   }
   return response.json();
 }
+
+interface CreateSubjectPayload {
+  course_id: number;
+  faculty_ids: number[];
+  semester_id: number;
+  translations: Array<{
+    description: string;
+    lang_code: string;
+    name: string;
+    status: string;
+  }>;
+}
+
+export async function createSubject(payload: CreateSubjectPayload) {
+  const response = await fetchWithAuth(`${API_BASE_URL}/subject`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    const text = await response.text().catch(() => '');
+    throw new Error(`Failed to create subject: ${response.status} ${text}`);
+  }
+  return response.json();
+}

@@ -45,6 +45,7 @@ export default function FileViewer({ filePath, fileName, className = '' }: FileV
       {/* Изображения */}
       {isImage && (
         <div className="flex items-center justify-center min-h-[400px] bg-accent/5 rounded-lg p-4">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img 
             src={filePath} 
             alt={displayName}

@@ -31,6 +31,7 @@ export default function SemesterList() {
 
   useEffect(() => {
     fetchSemesters();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage]);
 
   const fetchSemesters = async () => {

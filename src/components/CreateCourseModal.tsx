@@ -45,6 +45,7 @@ export default function CreateCourseModal({ isOpen, onClose, onCreated }: Create
     if (isOpen) {
       fetchDegrees();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, langCode]);
 
   const fetchDegrees = async () => {

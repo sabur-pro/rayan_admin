@@ -1,10 +1,11 @@
 // src/app/dashboard/subject/page.tsx
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { getSubjects } from '@/lib/subject';
+import CreateSubjectModal from '@/components/CreateSubjectModal';
 import type { Subject } from '../../../../types/subject';
 
 export default function SubjectPage() {
@@ -17,6 +18,11 @@ export default function SubjectPage() {
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const observerTarget = useRef<HTMLDivElement>(null);
+  const loadingMore = useRef(false);
 
   const handleSubjectClick = (subjectId: number) => {
     console.log('Subject clicked:', subjectId);
@@ -32,33 +38,101 @@ export default function SubjectPage() {
     router.push(url);
   };
 
+  const loadSubjects = useCallback(
+    async (pageNum: number, append = false) => {
+      if (!faculty_id || !course_id || !semester_id || loadingMore.current) {
+        return;
+      }
+
+      if (!append) {
+        setLoading(true);
+      }
+      loadingMore.current = true;
+      setError(null);
+
+      try {
+        const res = await getSubjects({
+          lang_code,
+          faculty_id,
+          course_id,
+          semester_id,
+          page: pageNum,
+          limit: 10,
+        });
+
+        if (append) {
+          setSubjects((prev) => [...prev, ...res.data]);
+        } else {
+          setSubjects(res.data);
+        }
+
+        setHasMore(res.data.length === 10 && res.page * res.limit < res.total_count);
+      } catch (e: unknown) {
+        setError(e instanceof Error ? e.message : 'Ошибка при загрузке предметов');
+      } finally {
+        setLoading(false);
+        loadingMore.current = false;
+      }
+    },
+    [faculty_id, course_id, semester_id, lang_code]
+  );
+
   useEffect(() => {
     if (!faculty_id || !course_id || !semester_id) {
       setError('Некорректные параметры запроса');
       return;
     }
-    setLoading(true);
-    setError(null);
-    getSubjects({
-      lang_code,
-      faculty_id,
-      course_id,
-      semester_id,
-      page: 1,
-      limit: 10,
-    })
-      .then((res) => setSubjects(res.data))
-      .catch((e) => setError(e.message || 'Ошибка при загрузке предметов'))
-      .finally(() => setLoading(false));
-  }, [faculty_id, course_id, semester_id, lang_code]);
+    setSubjects([]);
+    setPage(1);
+    setHasMore(true);
+    loadSubjects(1, false);
+  }, [faculty_id, course_id, semester_id, lang_code, loadSubjects]);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !loadingMore.current) {
+          setPage((prev) => {
+            const nextPage = prev + 1;
+            loadSubjects(nextPage, true);
+            return nextPage;
+          });
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    const currentTarget = observerTarget.current;
+    if (currentTarget) {
+      observer.observe(currentTarget);
+    }
+
+    return () => {
+      if (currentTarget) {
+        observer.unobserve(currentTarget);
+      }
+    };
+  }, [hasMore, loadSubjects]);
+
+  const handleSubjectCreated = (newSubject: Subject) => {
+    setSubjects([newSubject, ...subjects]);
+  };
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4 mb-4">
-        <button className="btn-outline px-3 py-1 rounded" onClick={() => router.back()}>
-          ← Назад
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-4">
+          <button className="btn-outline px-3 py-1 rounded" onClick={() => router.back()}>
+            ← Назад
+          </button>
+          <h1 className="text-2xl font-bold">Список предметов</h1>
+        </div>
+        <button
+          onClick={() => setIsModalOpen(true)}
+          className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
+        >
+          + Добавить предмет
         </button>
-        <h1 className="text-2xl font-bold">Список предметов</h1>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {loading && <div className="col-span-full text-center">Загрузка...</div>}
@@ -89,6 +163,21 @@ export default function SubjectPage() {
           <div className="col-span-full text-center text-muted-foreground">Нет предметов</div>
         )}
       </div>
+
+      {hasMore && !error && (
+        <div ref={observerTarget} className="col-span-full text-center py-4">
+          {loadingMore.current && <div className="text-muted-foreground">Загрузка...</div>}
+        </div>
+      )}
+
+      <CreateSubjectModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onCreated={handleSubjectCreated}
+        course_id={course_id}
+        semester_id={semester_id}
+        faculty_id={faculty_id}
+      />
     </div>
   );
 }
