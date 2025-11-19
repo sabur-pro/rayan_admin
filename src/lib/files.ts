@@ -46,7 +46,7 @@ export async function fetchSuspendedFiles(
   page = 1,
   limit = 10
 ): Promise<FilesResponse> {
-  const url = `${API_BASE_URL}/files/suspended?page=${page}&limit=${limit}&lang=${encodeURIComponent(lang)}`;
+  const url = `${API_BASE_URL}/files/suspended?page=${page}&limit=${limit}&lang_code=${encodeURIComponent(lang)}`;
   const response = await fetchWithAuth(url, {
     method: 'GET',
   });
@@ -58,3 +58,4 @@ export async function fetchSuspendedFiles(
 
   return response.json();
 }
+
