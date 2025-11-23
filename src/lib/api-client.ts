@@ -39,7 +39,7 @@ export const authApi = {
     removeAuthCookies();
   },
 
-  getUniversityTranslations: async (langCode: string, page = 1, limit = 10): Promise<UniversityTranslationsResponse> => {
+  getUniversityTranslations: async (langCode: string, page = 1, limit = 50): Promise<UniversityTranslationsResponse> => {
     const url = `${API_BASE_URL}/university?page=${page}&limit=${limit}&lang_code=${encodeURIComponent(
       langCode
     )}`;
@@ -58,7 +58,7 @@ export const authApi = {
     return data;
   },
 
-  getFaculties: async (university_id: number, langCode: string, page = 1, limit = 10): Promise<FacultyResponse> => {
+  getFaculties: async (university_id: number, langCode: string, page = 1, limit = 50): Promise<FacultyResponse> => {
     const url = `${API_BASE_URL}/faculty?page=${page}&limit=${limit}&university_id=${university_id}&lang_code=${encodeURIComponent(langCode)}`;
 
     const response = await fetchWithAuth(url, {

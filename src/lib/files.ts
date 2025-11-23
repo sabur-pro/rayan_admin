@@ -44,7 +44,7 @@ export async function uploadFile(file: File, lang: string): Promise<UploadedFile
 export async function fetchSuspendedFiles(
   lang: string,
   page = 1,
-  limit = 10
+  limit = 50
 ): Promise<FilesResponse> {
   const url = `${API_BASE_URL}/files/suspended?page=${page}&limit=${limit}&lang_code=${encodeURIComponent(lang)}`;
   const response = await fetchWithAuth(url, {

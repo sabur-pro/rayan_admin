@@ -9,7 +9,7 @@ export async function getMaterialTypes({
   lang_code,
   subject_id,
   page = 1,
-  limit = 10,
+  limit = 50,
 }: {
   lang_code: string;
   subject_id: number;
@@ -37,7 +37,7 @@ export async function getMaterialTypes({
 export async function getAllMaterialTypes({
   lang_code,
   page = 1,
-  limit = 10,
+  limit = 50,
 }: {
   lang_code: string;
   page?: number;
@@ -68,7 +68,7 @@ export async function getMaterials({
   subject_id,
   material_type_id,
   page = 1,
-  limit = 10,
+  limit = 50,
 }: {
   lang_code: string;
   course_id: number;

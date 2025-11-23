@@ -9,7 +9,7 @@ import type {
 const ENDPOINT = '/degree';
 const TRANSLATIONS_ENDPOINT = '/degree';
 
-export async function getDegreeTranslationsPage(page = 1, limit = 10): Promise<DegreeTranslationsResponse> {
+export async function getDegreeTranslationsPage(page = 1, limit = 50): Promise<DegreeTranslationsResponse> {
   const url = `${API_BASE_URL}${TRANSLATIONS_ENDPOINT}?page=${page}&limit=${limit}`;
   const resp = await fetchWithAuth(url, {
     method: 'GET',
@@ -25,7 +25,7 @@ export async function getDegreeTranslationsPage(page = 1, limit = 10): Promise<D
   return data;
 }
 
-export async function getAllDegreeTranslations(initialLimit = 10): Promise<DegreeItem[]> {
+export async function getAllDegreeTranslations(initialLimit = 50): Promise<DegreeItem[]> {
   const collected: DegreeItem[] = [];
   let page = 1;
   let total = Infinity;

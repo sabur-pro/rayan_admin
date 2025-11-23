@@ -31,7 +31,7 @@ interface CoursesResponse {
 export default function CourseList() {
   const [courses, setCourses] = useState<CourseItem[]>([]);
   const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
+  const [limit, setLimit] = useState(50);
   const [totalCount, setTotalCount] = useState(0);
   const [numberFilter, setNumberFilter] = useState<number | ''>('');
   const [langCodeFilter, setLangCodeFilter] = useState('ru');

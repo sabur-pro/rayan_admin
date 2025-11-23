@@ -5,8 +5,9 @@ import React, { useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { getMaterials } from '@/lib/material';
+import { fetchWithAuth, API_BASE_URL } from '@/lib/http';
 import type { Material } from '../../../../types/material';
-import { FileText, Download, ExternalLink, Calendar, Plus, Edit } from 'lucide-react';
+import { FileText, Download, ExternalLink, Calendar, Plus, Edit, Trash2 } from 'lucide-react';
 import FileViewer from '@/components/FileViewer';
 import CreateMaterialModal from '@/components/CreateMaterialModal';
 import EditMaterialModal from '@/components/EditMaterialModal';
@@ -29,6 +30,7 @@ export default function MaterialsPage() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingMaterial, setEditingMaterial] = useState<Material | null>(null);
   const [isMarkdownEditorOpen, setIsMarkdownEditorOpen] = useState(false);
+  const [deletingMaterialId, setDeletingMaterialId] = useState<number | null>(null);
 
   const loadMaterials = React.useCallback(() => {
     if (!course_id || !semester_id || !subject_id || !material_type_id) {
@@ -46,7 +48,7 @@ export default function MaterialsPage() {
       subject_id,
       material_type_id,
       page: 1,
-      limit: 10,
+      limit: 50,
     })
       .then((res) => setMaterials(res.data))
       .catch((e) => setError(e.message || 'Ошибка при загрузке материалов'))
@@ -72,6 +74,35 @@ export default function MaterialsPage() {
 
   const handleCloseViewer = () => {
     setSelectedMaterial(null);
+  };
+
+  const handleDeleteMaterial = async (materialId: number) => {
+    if (!confirm('Вы уверены, что хотите удалить этот материал?')) {
+      return;
+    }
+
+    setDeletingMaterialId(materialId);
+    try {
+      const response = await fetchWithAuth(
+        `${API_BASE_URL}/material/${materialId}?lang_code=${lang_code}`,
+        {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+
+      if (!response.ok) {
+        const text = await response.text().catch(() => '');
+        throw new Error(`Не удалось удалить материал: ${response.status} ${text}`);
+      }
+
+      // Обновляем список материалов после удаления
+      loadMaterials();
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Ошибка при удалении материала');
+    } finally {
+      setDeletingMaterialId(null);
+    }
   };
 
   return (
@@ -142,6 +173,21 @@ export default function MaterialsPage() {
                       title="Редактировать"
                     >
                       <Edit className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteMaterial(material.id);
+                      }}
+                      disabled={deletingMaterialId === material.id}
+                      className="p-2 rounded-lg bg-red-500/10 text-red-600 hover:bg-red-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      title="Удалить"
+                    >
+                      {deletingMaterialId === material.id ? (
+                        <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <Trash2 className="w-4 h-4" />
+                      )}
                     </button>
                     <div className="p-2 rounded-lg bg-primary/10 text-primary">
                       <FileText className="w-5 h-5" />

@@ -55,7 +55,7 @@ export default function MaterialTypesPage() {
       lang_code,
       subject_id,
       page: 1,
-      limit: 10,
+      limit: 50,
     })
       .then((res) => setMaterialTypes(res.data))
       .catch((e) => setError(e.message || 'Ошибка при загрузке типов материалов'))

@@ -48,7 +48,7 @@ export default function FacultiesPage(): JSX.Element {
   const [semestersLoading, setSemestersLoading] = useState(false);
   const [semestersError, setSemestersError] = useState<string | null>(null);
   const [selectedSemester, setSelectedSemester] = useState<Semester | null>(null);
-  const [limit, setLimit] = useState<number>(10);
+  const [limit, setLimit] = useState<number>(50);
   const [totalCount, setTotalCount] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -102,7 +102,7 @@ export default function FacultiesPage(): JSX.Element {
   }, [items, lang]);
 
   // --- API functions ---
-  async function fetchCourses(lang: string, page = 1, limit = 10) {
+  async function fetchCourses(lang: string, page = 1, limit = 50) {
     setCoursesLoading(true);
     setCoursesError(null);
     try {
@@ -116,7 +116,7 @@ export default function FacultiesPage(): JSX.Element {
     }
   }
 
-  async function fetchSemesters(page = 1, limit = 10) {
+  async function fetchSemesters(page = 1, limit = 50) {
     setSemestersLoading(true);
     setSemestersError(null);
     try {
@@ -148,7 +148,7 @@ export default function FacultiesPage(): JSX.Element {
     }
   }
   function handleLimitChange(e: React.ChangeEvent<HTMLSelectElement>) {
-    const newLimit = parseInt(e.target.value, 10) || 10;
+    const newLimit = parseInt(e.target.value, 10) || 50;
     setLimit(newLimit);
     // setPage(1);
   }
@@ -225,7 +225,7 @@ export default function FacultiesPage(): JSX.Element {
                 className="card-hover animate-in cursor-pointer border-2 hover:border-primary"
                 onClick={() => {
                   setSelectedFaculty(u);
-                  fetchCourses(lang, 1, 10);
+                  fetchCourses(lang, 1, 50);
                 }}
               >
                 <CardHeader className="pb-3">
@@ -292,7 +292,7 @@ export default function FacultiesPage(): JSX.Element {
                   className="card-hover animate-in cursor-pointer border-2 hover:border-primary"
                   onClick={() => {
                     setSelectedCourse(c);
-                    fetchSemesters(1, 10);
+                    fetchSemesters(1, 50);
                   }}
                 >
                   <CardHeader className="pb-3">
@@ -475,7 +475,7 @@ function SubjectsBlock({ facultyId, courseId, semesterId, langCode, onBack }: {
           course_id: courseId,
           semester_id: semesterId,
           page: pageNum,
-          limit: 10,
+          limit: 50,
         });
 
         if (append) {
@@ -484,7 +484,7 @@ function SubjectsBlock({ facultyId, courseId, semesterId, langCode, onBack }: {
           setSubjects(res.data);
         }
 
-        setHasMore(res.data.length === 10 && res.page * res.limit < res.total_count);
+        setHasMore(res.data.length === 50 && res.page * res.limit < res.total_count);
       } catch (e: unknown) {
         setError(e instanceof Error ? e.message : 'Ошибка при загрузке предметов');
       } finally {

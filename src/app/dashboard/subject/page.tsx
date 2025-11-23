@@ -57,7 +57,7 @@ export default function SubjectPage() {
           course_id,
           semester_id,
           page: pageNum,
-          limit: 10,
+          limit: 50,
         });
 
         if (append) {
@@ -66,7 +66,7 @@ export default function SubjectPage() {
           setSubjects(res.data);
         }
 
-        setHasMore(res.data.length === 10 && res.page * res.limit < res.total_count);
+        setHasMore(res.data.length === 50 && res.page * res.limit < res.total_count);
       } catch (e: unknown) {
         setError(e instanceof Error ? e.message : 'Ошибка при загрузке предметов');
       } finally {

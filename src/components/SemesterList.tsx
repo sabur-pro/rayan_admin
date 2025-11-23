@@ -26,7 +26,7 @@ export default function SemesterList() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const limit = 10;
+  const limit = 50;
   const totalPages = Math.ceil(totalCount / limit);
 
   useEffect(() => {

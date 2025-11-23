@@ -8,7 +8,7 @@ export async function getSubjects({
   semester_id,
   course_id,
   page = 1,
-  limit = 10,
+  limit = 50,
 }: {
   lang_code: string;
   faculty_id: number;

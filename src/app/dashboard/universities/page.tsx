@@ -40,7 +40,7 @@ export default function UniversitiesPage(): JSX.Element {
 
   const [items, setItems] = useState<UniversityTranslation[]>([]);
   const [page, setPage] = useState<number>(1);
-  const [limit, setLimit] = useState<number>(10);
+  const [limit, setLimit] = useState<number>(50);
   const [totalCount, setTotalCount] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -100,7 +100,7 @@ export default function UniversitiesPage(): JSX.Element {
     }
   }
   function handleLimitChange(e: React.ChangeEvent<HTMLSelectElement>) {
-    const newLimit = parseInt(e.target.value, 10) || 10;
+    const newLimit = parseInt(e.target.value, 10) || 50;
     setLimit(newLimit);
     setPage(1);
   }

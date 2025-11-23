@@ -2,7 +2,7 @@
 import { API_BASE_URL, fetchWithAuth } from '@/lib/http';
 import type { SemesterResponse } from '../../types/semester';
 
-export async function getSemesters(page = 1, limit = 10): Promise<SemesterResponse> {
+export async function getSemesters(page = 1, limit = 50): Promise<SemesterResponse> {
   const url = `${API_BASE_URL}/semester?page=${page}&limit=${limit}`;
   const response = await fetchWithAuth(url, {
     method: 'GET',
