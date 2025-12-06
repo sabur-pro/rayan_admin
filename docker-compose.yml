@@ -6,7 +6,7 @@ services:
     environment:
       - VIRTUAL_HOST=admin.medlife.tj
       - LETSENCRYPT_HOST=admin.medlife.tj
-      - LETSENCRYPT_EMAIL=afprojects052000@gmail.com
+      - LETSENCRYPT_EMAIL=saburnorov@gmail.com
       - NODE_ENV=production
     expose:
       - "3000"
