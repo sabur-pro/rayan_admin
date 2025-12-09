@@ -542,9 +542,10 @@ function SubjectsBlock({ facultyId, courseId, semesterId, langCode, onBack }: {
     router.push(url);
   };
 
-  const handleSubjectCreated = (newSubject: Subject) => {
-    setSubjects([newSubject, ...subjects]);
+  const handleSubjectCreated = () => {
     setIsModalOpen(false);
+    // Перезагружаем список с сервера, чтобы получить полные данные с translations
+    loadSubjects(1, false);
   };
 
   return (
@@ -567,7 +568,7 @@ function SubjectsBlock({ facultyId, courseId, semesterId, langCode, onBack }: {
         {loading && <div className="col-span-full text-center">Загрузка...</div>}
         {error && <div className="col-span-full text-center text-destructive">{error}</div>}
         {subjects.map((subj) => {
-          const t = subj.translations[0] || { name: '', description: '', status: '' };
+          const t = subj.translations?.[0] || { name: '', description: '', status: '' };
           return (
             <button
               key={subj.id}

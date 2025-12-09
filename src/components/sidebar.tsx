@@ -4,14 +4,13 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { 
-  BarChart3, 
+  Wallet, 
   Building2, 
   Users, 
   LogOut,
   Sun,
   Moon,
-  Home,
-  Settings
+  Home
 } from 'lucide-react';
 import { removeAuthCookies } from '@/lib/cookies';
 import { authApi } from '@/lib/api-client';
@@ -26,9 +25,9 @@ const navigation = [
     icon: Home,
   },
   {
-    name: 'Статистика',
+    name: 'Финансы',
     href: '/dashboard/statistics',
-    icon: BarChart3,
+    icon: Wallet,
   },
   {
     name: 'Университеты',
@@ -39,11 +38,6 @@ const navigation = [
     name: 'Пользователи',
     href: '/dashboard/users',
     icon: Users,
-  },
-  {
-    name: 'Настройки',
-    href: '/dashboard/settings',
-    icon: Settings,
   }
 ];
 

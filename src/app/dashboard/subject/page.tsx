@@ -114,8 +114,10 @@ export default function SubjectPage() {
     };
   }, [hasMore, loadSubjects]);
 
-  const handleSubjectCreated = (newSubject: Subject) => {
-    setSubjects([newSubject, ...subjects]);
+  const handleSubjectCreated = () => {
+    setIsModalOpen(false);
+    // Перезагружаем список с сервера
+    loadSubjects(1, false);
   };
 
   return (
@@ -138,7 +140,7 @@ export default function SubjectPage() {
         {loading && <div className="col-span-full text-center">Загрузка...</div>}
         {error && <div className="col-span-full text-center text-destructive">{error}</div>}
         {subjects.map((subj) => {
-          const t = subj.translations[0] || { name: '', description: '', status: '' };
+          const t = subj.translations?.[0] || { name: '', description: '', status: '' };
           
           return (
             <button 

@@ -3,12 +3,11 @@
 
 import React, { useState } from 'react';
 import { createSubject } from '@/lib/subject';
-import type { Subject } from '../../types/subject';
 
 interface CreateSubjectModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onCreated: (subject: Subject) => void;
+  onCreated: () => void;
   course_id: number;
   semester_id: number;
   faculty_id: number;
@@ -101,8 +100,8 @@ export default function CreateSubjectModal({
         })),
       };
 
-      const newSubject = await createSubject(payload);
-      onCreated(newSubject);
+      await createSubject(payload);
+      onCreated();
       onClose();
       // Reset form
       setTranslations([{ lang_code: 'ru', name: '', description: '', status: 'active' }]);

@@ -4,6 +4,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Download, Upload, Home, ImagePlus } from 'lucide-react';
 import 'react-quill/dist/quill.snow.css';
+import 'katex/dist/katex.min.css';
 import { useRouter } from 'next/navigation';
 import FileGallery from '@/components/FileGallery';
 
@@ -30,6 +31,11 @@ export default function PublicEditorPage() {
     let mounted = true;
     (async () => {
       const Quill = (await import('quill')).default;
+
+      // Импортируем KaTeX для формул
+      const katex = (await import('katex')).default;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (window as any).katex = katex;
 
       // Build toolbar container if not present
       const toolbarContainer = toolbarRef.current!;
@@ -70,16 +76,49 @@ export default function PublicEditorPage() {
             <button class="ql-code-block"></button>
           </span>
           <span class="ql-formats">
+            <button class="ql-formula" title="Вставить формулу">∑</button>
+          </span>
+          <span class="ql-formats">
             <button class="ql-clean"></button>
           </span>
         `;
       }
 
       if (editorHostRef.current && mounted) {
+        // Функция очистки текста от лишних пустых строк и фиксированной ширины
+        const cleanPastedText = (node: Node, delta: { ops: Array<{ insert?: string; attributes?: Record<string, unknown> }> }) => {
+          if (node instanceof HTMLElement) {
+            // Убираем inline стили, которые могут влиять на ширину
+            node.style.removeProperty('width');
+            node.style.removeProperty('max-width');
+            node.style.removeProperty('min-width');
+          }
+          
+          // Обрабатываем текст: убираем множественные переносы строк
+          if (delta.ops) {
+            delta.ops = delta.ops.map((op) => {
+              if (typeof op.insert === 'string') {
+                // Заменяем множественные пустые строки на одну
+                let text = op.insert;
+                // Убираем множественные переносы строк (более 2 подряд)
+                text = text.replace(/\n{3,}/g, '\n\n');
+                // Убираем пробелы в конце строк
+                text = text.replace(/[ \t]+\n/g, '\n');
+                // Убираем пробелы в начале строк (кроме первой)
+                text = text.replace(/\n[ \t]+/g, '\n');
+                return { ...op, insert: text };
+              }
+              return op;
+            });
+          }
+          return delta;
+        };
+
         const q = new Quill(editorHostRef.current, {
           theme: 'snow',
           placeholder: 'Начните печатать...',
           modules: {
+            formula: true, // Включаем модуль формул
             toolbar: {
               container: toolbarContainer,
               handlers: {
@@ -100,9 +139,49 @@ export default function PublicEditorPage() {
                     }
                   }
                 },
+                formula: function (this: { quill: { getSelection: (value: boolean) => { index: number }; insertEmbed: (index: number, type: string, value: string, source: string) => void } }) {
+                  const formula = window.prompt('Введите формулу LaTeX (например: x^2 + y^2 = z^2):');
+                  if (formula) {
+                    const range = this.quill.getSelection(true);
+                    this.quill.insertEmbed(range.index, 'formula', formula, 'user');
+                  }
+                },
               },
             },
+            clipboard: {
+              matchVisual: false, // Отключаем визуальное соответствие
+              matchers: [
+                // Очистка текста при вставке
+                [Node.ELEMENT_NODE, cleanPastedText],
+              ],
+            },
           },
+        });
+
+        // Добавляем обработчик paste для дополнительной очистки
+        q.root.addEventListener('paste', (e: ClipboardEvent) => {
+          const clipboardData = e.clipboardData;
+          if (clipboardData) {
+            const text = clipboardData.getData('text/plain');
+            if (text) {
+              // Очищаем текст от лишних переносов
+              const cleanedText = text
+                .replace(/\r\n/g, '\n') // Windows переносы
+                .replace(/\r/g, '\n') // Mac переносы
+                .replace(/\n{3,}/g, '\n\n') // Множественные переносы
+                .replace(/[ \t]+\n/g, '\n') // Пробелы в конце строк
+                .replace(/\n[ \t]+/g, '\n'); // Пробелы в начале строк
+              
+              // Если текст был изменен, отменяем стандартную вставку
+              if (cleanedText !== text) {
+                e.preventDefault();
+                const selection = q.getSelection();
+                if (selection) {
+                  q.insertText(selection.index, cleanedText);
+                }
+              }
+            }
+          }
         });
 
         // Set initial content
@@ -386,6 +465,26 @@ export default function PublicEditorPage() {
 
         .quill-fullscreen .ql-toolbar button.ql-active .ql-fill {
           fill: white;
+        }
+
+        /* Стили для формул */
+        .quill-fullscreen .ql-editor .ql-formula {
+          display: inline-block;
+          padding: 4px 8px;
+          background: #f0f9ff;
+          border: 1px solid #bae6fd;
+          border-radius: 4px;
+          margin: 0 4px;
+          cursor: pointer;
+        }
+
+        .quill-fullscreen .ql-editor .ql-formula:hover {
+          background: #e0f2fe;
+        }
+
+        .quill-fullscreen .ql-toolbar .ql-formula {
+          font-size: 16px;
+          font-weight: bold;
         }
       `}</style>
     </div>

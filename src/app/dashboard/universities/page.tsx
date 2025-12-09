@@ -176,12 +176,7 @@ export default function UniversitiesPage(): JSX.Element {
             </select>
           </div>
 
-          <Button className="btn-primary" onClick={() => setShowAddForm(true)}>
-            <svg className="mr-2 h-4 w-4 inline" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path d="M12 5v14M5 12h14" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-            Добавить университет
-          </Button>
+{/* Кнопка добавления университета скрыта */}
         </div>
       </div>
 
