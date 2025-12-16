@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
-import { X, Download, Upload, ImagePlus, FunctionSquare } from 'lucide-react';
+import { X, Download, Upload, ImagePlus } from 'lucide-react';
 import TurndownService from 'turndown';
 import 'react-quill/dist/quill.snow.css';
 import 'katex/dist/katex.min.css';
@@ -31,9 +31,22 @@ export default function QuillEditor({ isOpen, onClose }: QuillEditorProps) {
   const quillRef = useRef<QuillInstance | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Lock body scroll when editor is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isOpen]);
+
+  // Quill editor initialization
   useEffect(() => {
     if (!isOpen) return;
-    let mounted = true;
+    let isMounted = true;
     (async () => {
       const Quill = (await import('quill')).default;
 
@@ -41,7 +54,7 @@ export default function QuillEditor({ isOpen, onClose }: QuillEditorProps) {
       const katex = (await import('katex')).default;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (window as any).katex = katex;
-      
+
       // Build toolbar container if not present
       const toolbarContainer = toolbarRef.current!;
       if (toolbarContainer && toolbarContainer.childElementCount === 0) {
@@ -89,7 +102,7 @@ export default function QuillEditor({ isOpen, onClose }: QuillEditorProps) {
         `;
       }
 
-      if (editorHostRef.current && mounted) {
+      if (editorHostRef.current && isMounted) {
         // Функция очистки текста от лишних пустых строк и фиксированной ширины
         const cleanPastedText = (node: Node, delta: { ops: Array<{ insert?: string; attributes?: Record<string, unknown> }> }) => {
           if (node instanceof HTMLElement) {
@@ -98,7 +111,7 @@ export default function QuillEditor({ isOpen, onClose }: QuillEditorProps) {
             node.style.removeProperty('max-width');
             node.style.removeProperty('min-width');
           }
-          
+
           // Обрабатываем текст: убираем множественные переносы строк
           if (delta.ops) {
             delta.ops = delta.ops.map((op) => {
@@ -163,28 +176,45 @@ export default function QuillEditor({ isOpen, onClose }: QuillEditorProps) {
           },
         });
 
-        // Добавляем обработчик paste для дополнительной очистки
+        // Добавляем обработчик paste для корректной вставки текста
         q.root.addEventListener('paste', (e: ClipboardEvent) => {
           const clipboardData = e.clipboardData;
-          if (clipboardData) {
-            const text = clipboardData.getData('text/plain');
-            if (text) {
-              // Очищаем текст от лишних переносов
-              const cleanedText = text
-                .replace(/\r\n/g, '\n') // Windows переносы
-                .replace(/\r/g, '\n') // Mac переносы
-                .replace(/\n{3,}/g, '\n\n') // Множественные переносы
-                .replace(/[ \t]+\n/g, '\n') // Пробелы в конце строк
-                .replace(/\n[ \t]+/g, '\n'); // Пробелы в начале строк
-              
-              // Если текст был изменен, отменяем стандартную вставку
-              if (cleanedText !== text) {
-                e.preventDefault();
-                const selection = q.getSelection();
-                if (selection) {
-                  q.insertText(selection.index, cleanedText);
+          if (!clipboardData) return;
+
+          // Получаем HTML и plain text из буфера обмена
+          const html = clipboardData.getData('text/html');
+          const text = clipboardData.getData('text/plain');
+
+          // Если есть контент, обрабатываем вставку
+          if (html || text) {
+            e.preventDefault();
+
+            const selection = q.getSelection(true);
+            const index = selection ? selection.index : 0;
+
+            if (html) {
+              // Вставляем HTML-контент через clipboard API Quill
+              // Создаем временный элемент для очистки HTML
+              const tempDiv = document.createElement('div');
+              tempDiv.innerHTML = html;
+              // Убираем нежелательные стили
+              const elements = tempDiv.querySelectorAll('*');
+              elements.forEach((el) => {
+                if (el instanceof HTMLElement) {
+                  el.style.removeProperty('width');
+                  el.style.removeProperty('max-width');
+                  el.style.removeProperty('min-width');
                 }
-              }
+              });
+              q.clipboard.dangerouslyPasteHTML(index, tempDiv.innerHTML);
+            } else if (text) {
+              // Очищаем текст от лишних переносов и вставляем
+              const cleanedText = text
+                .replace(/\r\n/g, '\n')
+                .replace(/\r/g, '\n')
+                .replace(/\n{3,}/g, '\n\n')
+                .trim();
+              q.insertText(index, cleanedText);
             }
           }
         });
@@ -196,7 +226,7 @@ export default function QuillEditor({ isOpen, onClose }: QuillEditorProps) {
       }
     })();
     return () => {
-      mounted = false;
+      isMounted = false;
       quillRef.current = null;
     };
   }, [isOpen]);
@@ -270,11 +300,11 @@ export default function QuillEditor({ isOpen, onClose }: QuillEditorProps) {
       try {
         const content = e.target?.result as string;
         const delta = JSON.parse(content);
-        
+
         if (quillRef.current && delta.ops) {
           // Загружаем Delta в Quill
           quillRef.current.setContents(delta);
-          
+
           // Обновляем имя файла
           const baseName = file.name.replace('.quill.json', '').replace('.json', '');
           setFileName(baseName);
@@ -287,7 +317,7 @@ export default function QuillEditor({ isOpen, onClose }: QuillEditorProps) {
       }
     };
     reader.readAsText(file);
-    
+
     // Сбросить input для возможности повторной загрузки того же файла
     event.target.value = '';
   };
@@ -315,7 +345,7 @@ export default function QuillEditor({ isOpen, onClose }: QuillEditorProps) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[9999] flex flex-col">
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex flex-col" style={{ zIndex: 99999 }}>
       <div className="w-full h-full bg-background flex flex-col">
         {/* Верхняя панель */}
         <div className="border-b bg-background px-6 py-4 flex items-center justify-between shrink-0">
@@ -332,54 +362,53 @@ export default function QuillEditor({ isOpen, onClose }: QuillEditorProps) {
           <div className="flex items-center gap-3">
             <button
               onClick={() => setShowGallery(!showGallery)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors font-medium ${
-                showGallery
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-accent hover:bg-accent/80'
-              }`}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors font-medium ${showGallery
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-accent hover:bg-accent/80'
+                }`}
               title="Галерея файлов"
             >
               <ImagePlus className="w-5 h-5" />
               Галерея
             </button>
-            <button 
-              onClick={handleUploadDelta} 
+            <button
+              onClick={handleUploadDelta}
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
               title="Загрузить Quill JSON"
             >
               <Upload className="w-5 h-5" />
               Загрузить JSON
             </button>
-            <input 
+            <input
               ref={fileInputRef}
-              type="file" 
+              type="file"
               accept=".json,.quill.json"
               onChange={handleFileChange}
               className="hidden"
             />
-            <button 
-              onClick={handleDownloadDelta} 
+            <button
+              onClick={handleDownloadDelta}
               className="flex items-center gap-2 px-4 py-2 bg-accent rounded-lg hover:bg-accent/80 transition-colors font-medium"
               title="Скачать как Quill Delta (.json)"
             >
               Quill JSON
             </button>
-            <button 
-              onClick={handleDownloadHTML} 
+            <button
+              onClick={handleDownloadHTML}
               className="flex items-center gap-2 px-4 py-2 bg-accent rounded-lg hover:bg-accent/80 transition-colors font-medium"
               title="Скачать как HTML"
             >
               HTML
             </button>
-            <button 
-              onClick={handleDownload} 
+            <button
+              onClick={handleDownload}
               className="flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium"
             >
               <Download className="w-5 h-5" />
               Скачать MD
             </button>
-            <button 
-              onClick={handleClose} 
+            <button
+              onClick={handleClose}
               className="p-2 hover:bg-accent rounded-lg transition-colors"
               title="Закрыть"
             >
@@ -530,15 +559,15 @@ export default function QuillEditor({ isOpen, onClose }: QuillEditorProps) {
         .quill-fullscreen .ql-editor .ql-formula {
           display: inline-block;
           padding: 4px 8px;
-          background: #f0f9ff;
-          border: 1px solid #bae6fd;
+          background: rgba(59, 130, 246, 0.1);
+          border: 1px solid rgba(59, 130, 246, 0.3);
           border-radius: 4px;
           margin: 0 4px;
           cursor: pointer;
         }
 
         .quill-fullscreen .ql-editor .ql-formula:hover {
-          background: #e0f2fe;
+          background: rgba(59, 130, 246, 0.2);
         }
 
         .quill-fullscreen .ql-toolbar .ql-formula {
@@ -549,6 +578,42 @@ export default function QuillEditor({ isOpen, onClose }: QuillEditorProps) {
         /* Tooltip для кнопки формулы */
         .quill-fullscreen .ql-toolbar .ql-formula::after {
           content: none;
+        }
+
+        /* Стили для KaTeX формул с поддержкой тёмной темы */
+        .katex {
+          color: #111827 !important;
+        }
+
+        .katex .katex-html,
+        .katex .base,
+        .katex .strut,
+        .katex .mord,
+        .katex .mbin,
+        .katex .mrel,
+        .katex .mop,
+        .katex .mpunct,
+        .katex .mopen,
+        .katex .mclose,
+        .katex .minner,
+        .katex .mfrac,
+        .katex .mspace {
+          color: inherit;
+        }
+
+        /* Стили для тёмной темы */
+        .dark .katex,
+        .dark .katex * {
+          color: #f9fafb !important;
+        }
+
+        .dark .quill-fullscreen .ql-editor .ql-formula {
+          background: rgba(59, 130, 246, 0.2);
+          border-color: rgba(59, 130, 246, 0.4);
+        }
+
+        .dark .quill-fullscreen .ql-editor .ql-formula:hover {
+          background: rgba(59, 130, 246, 0.3);
         }
       `}</style>
     </div>

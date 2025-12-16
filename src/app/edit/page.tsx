@@ -93,7 +93,7 @@ export default function PublicEditorPage() {
             node.style.removeProperty('max-width');
             node.style.removeProperty('min-width');
           }
-          
+
           // Обрабатываем текст: убираем множественные переносы строк
           if (delta.ops) {
             delta.ops = delta.ops.map((op) => {
@@ -158,28 +158,45 @@ export default function PublicEditorPage() {
           },
         });
 
-        // Добавляем обработчик paste для дополнительной очистки
+        // Добавляем обработчик paste для корректной вставки текста
         q.root.addEventListener('paste', (e: ClipboardEvent) => {
           const clipboardData = e.clipboardData;
-          if (clipboardData) {
-            const text = clipboardData.getData('text/plain');
-            if (text) {
-              // Очищаем текст от лишних переносов
-              const cleanedText = text
-                .replace(/\r\n/g, '\n') // Windows переносы
-                .replace(/\r/g, '\n') // Mac переносы
-                .replace(/\n{3,}/g, '\n\n') // Множественные переносы
-                .replace(/[ \t]+\n/g, '\n') // Пробелы в конце строк
-                .replace(/\n[ \t]+/g, '\n'); // Пробелы в начале строк
-              
-              // Если текст был изменен, отменяем стандартную вставку
-              if (cleanedText !== text) {
-                e.preventDefault();
-                const selection = q.getSelection();
-                if (selection) {
-                  q.insertText(selection.index, cleanedText);
+          if (!clipboardData) return;
+
+          // Получаем HTML и plain text из буфера обмена
+          const html = clipboardData.getData('text/html');
+          const text = clipboardData.getData('text/plain');
+
+          // Если есть контент, обрабатываем вставку
+          if (html || text) {
+            e.preventDefault();
+
+            const selection = q.getSelection(true);
+            const index = selection ? selection.index : 0;
+
+            if (html) {
+              // Вставляем HTML-контент через clipboard API Quill
+              // Создаем временный элемент для очистки HTML
+              const tempDiv = document.createElement('div');
+              tempDiv.innerHTML = html;
+              // Убираем нежелательные стили
+              const elements = tempDiv.querySelectorAll('*');
+              elements.forEach((el) => {
+                if (el instanceof HTMLElement) {
+                  el.style.removeProperty('width');
+                  el.style.removeProperty('max-width');
+                  el.style.removeProperty('min-width');
                 }
-              }
+              });
+              q.clipboard.dangerouslyPasteHTML(index, tempDiv.innerHTML);
+            } else if (text) {
+              // Очищаем текст от лишних переносов и вставляем
+              const cleanedText = text
+                .replace(/\r\n/g, '\n')
+                .replace(/\r/g, '\n')
+                .replace(/\n{3,}/g, '\n\n')
+                .trim();
+              q.insertText(index, cleanedText);
             }
           }
         });
@@ -225,11 +242,11 @@ export default function PublicEditorPage() {
       try {
         const content = e.target?.result as string;
         const delta = JSON.parse(content);
-        
+
         if (quillRef.current && delta.ops) {
           // Загружаем Delta в Quill
           quillRef.current.setContents(delta);
-          
+
           // Обновляем имя файла
           const baseName = file.name.replace('.json', '');
           setFileName(baseName);
@@ -242,7 +259,7 @@ export default function PublicEditorPage() {
       }
     };
     reader.readAsText(file);
-    
+
     // Сбросить input для возможности повторной загрузки того же файла
     event.target.value = '';
   };
@@ -285,41 +302,40 @@ export default function PublicEditorPage() {
           <div className="flex items-center gap-3">
             <button
               onClick={() => setShowGallery(!showGallery)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors font-medium ${
-                showGallery
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors font-medium ${showGallery
                   ? 'bg-primary text-primary-foreground'
                   : 'bg-accent hover:bg-accent/80'
-              }`}
+                }`}
               title="Галерея файлов"
             >
               <ImagePlus className="w-5 h-5" />
               Галерея
             </button>
-            <button 
-              onClick={handleUploadJSON} 
+            <button
+              onClick={handleUploadJSON}
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
               title="Загрузить JSON"
             >
               <Upload className="w-5 h-5" />
               Загрузить JSON
             </button>
-            <input 
+            <input
               ref={fileInputRef}
-              type="file" 
+              type="file"
               accept=".json"
               onChange={handleFileChange}
               className="hidden"
             />
-            <button 
-              onClick={handleDownloadDelta} 
+            <button
+              onClick={handleDownloadDelta}
               className="flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium"
               title="Скачать как JSON"
             >
               <Download className="w-5 h-5" />
               Скачать JSON
             </button>
-            <button 
-              onClick={handleClose} 
+            <button
+              onClick={handleClose}
               className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
               title="Вернуться на главную"
             >
@@ -471,20 +487,56 @@ export default function PublicEditorPage() {
         .quill-fullscreen .ql-editor .ql-formula {
           display: inline-block;
           padding: 4px 8px;
-          background: #f0f9ff;
-          border: 1px solid #bae6fd;
+          background: rgba(59, 130, 246, 0.1);
+          border: 1px solid rgba(59, 130, 246, 0.3);
           border-radius: 4px;
           margin: 0 4px;
           cursor: pointer;
         }
 
         .quill-fullscreen .ql-editor .ql-formula:hover {
-          background: #e0f2fe;
+          background: rgba(59, 130, 246, 0.2);
         }
 
         .quill-fullscreen .ql-toolbar .ql-formula {
           font-size: 16px;
           font-weight: bold;
+        }
+
+        /* Стили для KaTeX формул с поддержкой тёмной темы */
+        .katex {
+          color: #111827 !important;
+        }
+
+        .katex .katex-html,
+        .katex .base,
+        .katex .strut,
+        .katex .mord,
+        .katex .mbin,
+        .katex .mrel,
+        .katex .mop,
+        .katex .mpunct,
+        .katex .mopen,
+        .katex .mclose,
+        .katex .minner,
+        .katex .mfrac,
+        .katex .mspace {
+          color: inherit;
+        }
+
+        /* Стили для тёмной темы */
+        .dark .katex,
+        .dark .katex * {
+          color: #f9fafb !important;
+        }
+
+        .dark .quill-fullscreen .ql-editor .ql-formula {
+          background: rgba(59, 130, 246, 0.2);
+          border-color: rgba(59, 130, 246, 0.4);
+        }
+
+        .dark .quill-fullscreen .ql-editor .ql-formula:hover {
+          background: rgba(59, 130, 246, 0.3);
         }
       `}</style>
     </div>
