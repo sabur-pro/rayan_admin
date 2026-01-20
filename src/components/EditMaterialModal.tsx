@@ -61,7 +61,7 @@ export default function EditMaterialModal({
 
   const handleUpdateMaterial = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!name.trim() || !material) {
       setError('Введите название материала');
       return;
@@ -105,12 +105,12 @@ export default function EditMaterialModal({
 
   const handleUploadFiles = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    
+
     if (files.length === 0) {
       setError('Выберите файлы для загрузки');
       return;
     }
-    
+
     if (!material) return;
 
     setUploadingFiles(true);
@@ -282,7 +282,7 @@ export default function EditMaterialModal({
           {/* Секция загрузки файлов */}
           <div className="mt-6 pt-6 border-t">
             <h3 className="text-lg font-semibold mb-4">Загрузка файлов</h3>
-            
+
             <div className="space-y-4">
               <div>
                 <label htmlFor="files" className="block text-sm font-medium mb-2">
@@ -296,7 +296,6 @@ export default function EditMaterialModal({
                     onChange={handleFileChange}
                     className="hidden"
                     disabled={loading || uploadingFiles}
-                    accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.md,.json"
                   />
                   <label
                     htmlFor="files"
@@ -307,7 +306,7 @@ export default function EditMaterialModal({
                       Нажмите для выбора файлов
                     </span>
                     <span className="text-xs text-muted-foreground">
-                      Поддерживаются изображения, документы, PDF и другие форматы
+                      Поддерживаются все типы файлов: изображения, документы, аудио, видео и другие
                     </span>
                   </label>
                 </div>
@@ -349,7 +348,7 @@ export default function EditMaterialModal({
                         </button>
                       </div>
                     ))}
-                    
+
                     <button
                       onClick={() => handleUploadFiles()}
                       className="w-full mt-3 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
