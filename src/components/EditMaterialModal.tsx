@@ -28,6 +28,7 @@ export default function EditMaterialModal({
   const [files, setFiles] = useState<File[]>([]);
   const [loading, setLoading] = useState(false);
   const [uploadingFiles, setUploadingFiles] = useState(false);
+  const [deletingFile, setDeletingFile] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const translation = material?.translations.find((t) => t.lang_code === langCode) || material?.translations[0];
@@ -57,6 +58,29 @@ export default function EditMaterialModal({
 
   const handleRemoveFile = (index: number) => {
     setFiles(files.filter((_, i) => i !== index));
+  };
+
+  const handleDeleteFile = async (path: string) => {
+    setDeletingFile(path);
+    setError(null);
+    try {
+      // Убираем базовый URL, оставляя только относительный путь (uploads/images/...)
+      const relativePath = path.replace(`${API_BASE_URL}/`, '');
+      const response = await fetchWithAuth(`${API_BASE_URL}/files`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path: relativePath }),
+      });
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => '');
+        throw new Error(`Ошибка при удалении файла: ${response.status} ${errorText}`);
+      }
+      onMaterialUpdated();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Ошибка при удалении файла');
+    } finally {
+      setDeletingFile(null);
+    }
   };
 
   const handleUpdateMaterial = async (e: React.FormEvent) => {
@@ -247,6 +271,19 @@ export default function EditMaterialModal({
                     >
                       <FileText className="w-4 h-4 text-primary flex-shrink-0" />
                       <span className="truncate flex-1">{path.split('/').pop()}</span>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteFile(path)}
+                        className="p-1 hover:bg-destructive/20 rounded flex-shrink-0"
+                        disabled={deletingFile === path || loading || uploadingFiles}
+                        title="Удалить файл"
+                      >
+                        {deletingFile === path ? (
+                          <Loader2 className="w-4 h-4 animate-spin text-destructive" />
+                        ) : (
+                          <X className="w-4 h-4 text-destructive" />
+                        )}
+                      </button>
                     </div>
                   ))}
                 </div>
