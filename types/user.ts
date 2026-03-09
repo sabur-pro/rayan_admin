@@ -7,6 +7,7 @@ export interface User {
   university_id: number;
   faculty_id: number;
   lang_code: string;
+  phone: string;
   role: string;
   created_at: string;
   updated_at: string;
@@ -59,6 +60,7 @@ export interface Subscription {
     university_id: number;
     faculty_id: number;
     lang_code: string;
+    phone: string;
     role: string;
     created_at: string;
     updated_at: string;

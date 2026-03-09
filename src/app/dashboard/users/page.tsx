@@ -3,12 +3,14 @@
 
 import React, { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Users, Search, GraduationCap, Building2, BookOpen, Calendar, CreditCard, Check, X, Loader2 } from 'lucide-react';
+import { Users, Search, GraduationCap, Building2, BookOpen, Calendar, CreditCard, Check, X, Loader2, MessageSquare, Star } from 'lucide-react';
 import { getUsers, getSubscriptions, updateSubscriptionStatus } from '@/lib/user';
 import { api } from '@/lib/api-client';
 import { getCourses } from '@/lib/course';
 import { getSemesters } from '@/lib/semester';
+import { getReviews, updateReviewStatus } from '@/lib/review';
 import type { User, Subscription } from '../../../../types/user';
+import type { Review, ReviewStatus } from '../../../../types/review';
 import type { UniversityTranslation } from '../../../../types/university';
 import type { Faculty } from '../../../../types/faculty';
 import type { Course } from '../../../../types/course';
@@ -61,7 +63,7 @@ export default function UsersPage() {
   const [error, setError] = useState<string | null>(null);
 
   // Табы
-  const [activeTab, setActiveTab] = useState<'users' | 'subscriptions'>('users');
+  const [activeTab, setActiveTab] = useState<'users' | 'subscriptions' | 'reviews'>('users');
 
   // Подписки
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
@@ -77,25 +79,34 @@ export default function UsersPage() {
   const [updatingSubIds, setUpdatingSubIds] = useState<Set<number>>(new Set());
   const [proofPhotoModal, setProofPhotoModal] = useState<string | null>(null);
 
+  // Отзывы
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [reviewsPage, setReviewsPage] = useState(1);
+  const [reviewsLimit] = useState(20);
+  const [reviewsTotalCount, setReviewsTotalCount] = useState(0);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
+  const [reviewsError, setReviewsError] = useState<string | null>(null);
+  const [updatingReviewIds, setUpdatingReviewIds] = useState<Set<number>>(new Set());
+
   // Функция расчёта периода подписки
   const calculatePeriod = (startDateStr: string, endDateStr: string): string => {
     const start = new Date(startDateStr).getTime();
     const end = new Date(endDateStr).getTime();
     const diff = end - start;
-    
+
     if (diff <= 0) return '0 дней';
-    
+
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
     const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
     const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
     const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-    
+
     const parts: string[] = [];
     if (days > 0) parts.push(`${days} ${days === 1 ? 'день' : days < 5 ? 'дня' : 'дней'}`);
     if (hours > 0) parts.push(`${hours} ${hours === 1 ? 'час' : hours < 5 ? 'часа' : 'часов'}`);
     if (minutes > 0) parts.push(`${minutes} ${minutes === 1 ? 'минута' : minutes < 5 ? 'минуты' : 'минут'}`);
     if (seconds > 0 && days === 0) parts.push(`${seconds} ${seconds === 1 ? 'секунда' : seconds < 5 ? 'секунды' : 'секунд'}`);
-    
+
     return parts.length > 0 ? parts.join(' ') : '0 секунд';
   };
 
@@ -104,18 +115,18 @@ export default function UsersPage() {
     const now = Date.now();
     const end = new Date(endDateStr).getTime();
     const diff = end - now;
-    
+
     if (diff <= 0) return { text: 'Истекла', isExpired: true };
-    
+
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
     const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
     const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-    
+
     const parts: string[] = [];
     if (days > 0) parts.push(`${days} ${days === 1 ? 'день' : days < 5 ? 'дня' : 'дней'}`);
     if (hours > 0) parts.push(`${hours} ${hours === 1 ? 'час' : hours < 5 ? 'часа' : 'часов'}`);
     if (minutes > 0 && days === 0) parts.push(`${minutes} ${minutes === 1 ? 'минута' : minutes < 5 ? 'минуты' : 'минут'}`);
-    
+
     return { text: parts.length > 0 ? parts.join(' ') : 'Менее минуты', isExpired: false };
   };
 
@@ -137,6 +148,29 @@ export default function UsersPage() {
       setUpdatingSubIds((prev) => {
         const next = new Set(prev);
         next.delete(subId);
+        return next;
+      });
+    }
+  };
+
+  // Обработчик изменения статуса отзыва
+  const handleReviewStatusChange = async (reviewId: number, newStatus: ReviewStatus) => {
+    setUpdatingReviewIds((prev) => new Set(prev).add(reviewId));
+    try {
+      await updateReviewStatus(reviewId, newStatus);
+      // Обновляем статус в локальном состоянии
+      setReviews((prev) =>
+        prev.map((review) =>
+          review.id === reviewId ? { ...review, status: newStatus } : review
+        )
+      );
+    } catch (err) {
+      console.error('Failed to update review status:', err);
+      alert('Ошибка при обновлении статуса: ' + (err as Error).message);
+    } finally {
+      setUpdatingReviewIds((prev) => {
+        const next = new Set(prev);
+        next.delete(reviewId);
         return next;
       });
     }
@@ -307,6 +341,36 @@ export default function UsersPage() {
     }
   }, [activeTab, startDate, endDate, loadSubscriptionsData]);
 
+  // Загрузка отзывов
+  const loadReviewsData = useCallback(async () => {
+    setReviewsLoading(true);
+    setReviewsError(null);
+    try {
+      const res = await getReviews({
+        page: reviewsPage,
+        limit: reviewsLimit,
+      });
+      setReviews(res.data);
+      setReviewsTotalCount(res.total_count);
+    } catch (err) {
+      console.error('Failed to load reviews:', err);
+      setReviewsError((err as Error).message || 'Ошибка при загрузке отзывов');
+      setReviews([]);
+      setReviewsTotalCount(0);
+    } finally {
+      setReviewsLoading(false);
+    }
+  }, [reviewsPage, reviewsLimit]);
+
+  // Загрузка отзывов при переключении таба
+  useEffect(() => {
+    if (activeTab === 'reviews') {
+      loadReviewsData();
+    }
+  }, [activeTab, loadReviewsData]);
+
+  const reviewsTotalPages = useMemo(() => Math.max(1, Math.ceil(reviewsTotalCount / reviewsLimit)), [reviewsTotalCount, reviewsLimit]);
+
   // Infinity scroll
   useEffect(() => {
     if (activeTab !== 'subscriptions') return;
@@ -350,8 +414,10 @@ export default function UsersPage() {
   const getStatusBgColor = (status: string) => {
     switch (status) {
       case 'accepted': return 'bg-green-500/10 text-green-600';
-      case 'pending': return 'bg-yellow-500/10 text-yellow-600';
-      case 'denied': return 'bg-red-500/10 text-red-600';
+      case 'pending':
+      case 'in_processing': return 'bg-yellow-500/10 text-yellow-600';
+      case 'denied':
+      case 'rejected': return 'bg-red-500/10 text-red-600';
       default: return 'bg-muted text-muted-foreground';
     }
   };
@@ -368,27 +434,35 @@ export default function UsersPage() {
           <div className="flex items-center gap-2 bg-muted/50 p-1 rounded-lg">
             <button
               onClick={() => setActiveTab('users')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-md transition-colors ${
-                activeTab === 'users' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
-              }`}
+              className={`flex items-center gap-2 px-4 py-2 rounded-md transition-colors ${activeTab === 'users' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
+                }`}
             >
               <Users className="h-4 w-4" />
               Пользователи
             </button>
             <button
               onClick={() => setActiveTab('subscriptions')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-md transition-colors ${
-                activeTab === 'subscriptions' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
-              }`}
+              className={`flex items-center gap-2 px-4 py-2 rounded-md transition-colors ${activeTab === 'subscriptions' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
+                }`}
             >
               <CreditCard className="h-4 w-4" />
               Подписки
+            </button>
+            <button
+              onClick={() => setActiveTab('reviews')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-md transition-colors ${activeTab === 'reviews' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
+                }`}
+            >
+              <MessageSquare className="h-4 w-4" />
+              Отзывы
             </button>
           </div>
           <div className="text-sm text-muted-foreground">
             {activeTab === 'users'
               ? (loading ? 'Загрузка...' : error ? <span className="text-destructive">{error}</span> : `${totalCount} найдено`)
-              : (subsLoading ? 'Загрузка...' : subsError ? <span className="text-destructive">{subsError}</span> : `${subscriptions.length} подписок`)}
+              : activeTab === 'subscriptions'
+                ? (subsLoading ? 'Загрузка...' : subsError ? <span className="text-destructive">{subsError}</span> : `${subscriptions.length} подписок`)
+                : (reviewsLoading ? 'Загрузка...' : reviewsError ? <span className="text-destructive">{reviewsError}</span> : `${reviewsTotalCount} отзывов`)}
           </div>
         </div>
       </div>
@@ -491,7 +565,7 @@ export default function UsersPage() {
                       <th className="px-4 py-3 text-left text-sm font-medium">Семестр</th>
                       <th className="px-4 py-3 text-left text-sm font-medium">Университет</th>
                       <th className="px-4 py-3 text-left text-sm font-medium">Факультет</th>
-                      <th className="px-4 py-3 text-left text-sm font-medium">Предметов</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium">Телефон</th>
                       <th className="px-4 py-3 text-left text-sm font-medium">Создан</th>
                     </tr>
                   </thead>
@@ -513,7 +587,7 @@ export default function UsersPage() {
                         <td className="px-4 py-3 text-sm">{user.semester_id}</td>
                         <td className="px-4 py-3 text-sm">{user.university_id}</td>
                         <td className="px-4 py-3 text-sm">{user.faculty_id}</td>
-                        <td className="px-4 py-3 text-sm"><span className="px-2 py-1 rounded bg-muted text-xs">{user.faculty?.subjects?.length || 0}</span></td>
+                        <td className="px-4 py-3 text-sm">{user.phone || '-'}</td>
                         <td className="px-4 py-3 text-sm text-muted-foreground">{new Date(user.created_at).toLocaleDateString('ru-RU')}</td>
                       </tr>
                     ))}
@@ -596,8 +670,8 @@ export default function UsersPage() {
               const isUpdating = updatingSubIds.has(sub.id);
               const remaining = calculateRemaining(sub.end_date);
               return (
-                <Card 
-                  key={sub.id} 
+                <Card
+                  key={sub.id}
                   className="border-solid transition-all hover:shadow-lg"
                   style={getStatusBorderStyle(sub.status)}
                 >
@@ -605,6 +679,7 @@ export default function UsersPage() {
                     <div className="flex items-start justify-between mb-3">
                       <div>
                         <div className="font-medium">{sub.user?.login || 'Неизвестный пользователь'}</div>
+                        {sub.user?.phone && <div className="text-xs font-semibold text-primary">{sub.user.phone}</div>}
                         <div className="text-xs text-muted-foreground">ID подписки: {sub.id}</div>
                       </div>
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusBgColor(sub.status)}`}>
@@ -655,7 +730,7 @@ export default function UsersPage() {
                     <div className="mt-3 pt-3 border-t text-xs text-muted-foreground">
                       Курс: {sub.user?.course_id > 0 ? 7 - sub.user.course_id : '-'} • Семестр: {sub.user?.semester_id || '-'}
                     </div>
-                    
+
                     {/* Кнопки управления для pending */}
                     {sub.status === 'pending' && (
                       <div className="mt-4 pt-3 border-t flex gap-2">
@@ -691,9 +766,102 @@ export default function UsersPage() {
         </>
       )}
 
+      {/* Контент для Отзывов */}
+      {activeTab === 'reviews' && (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {reviewsLoading && reviews.length === 0 && (
+              <div className="col-span-full text-center py-8 text-muted-foreground">Загрузка...</div>
+            )}
+            {reviewsError && (
+              <div className="col-span-full text-center py-8 text-destructive">{reviewsError}</div>
+            )}
+            {!reviewsLoading && !reviewsError && reviews.length === 0 && (
+              <div className="col-span-full text-center py-8 text-muted-foreground">Отзывы не найдены</div>
+            )}
+            {reviews.map((review) => {
+              const isUpdating = updatingReviewIds.has(review.id);
+              return (
+                <Card
+                  key={review.id}
+                  className="border-solid transition-all hover:shadow-lg flex flex-col"
+                  style={getStatusBorderStyle(review.status === 'in_processing' ? 'pending' : review.status === 'rejected' ? 'denied' : review.status)}
+                >
+                  <CardContent className="p-4 flex-1 flex flex-col">
+                    <div className="flex items-start justify-between mb-3">
+                      <div>
+                        <div className="font-medium">Пользователь: {review.user_id}</div>
+                        <div className="text-xs text-muted-foreground">ID отзыва: {review.id}</div>
+                      </div>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusBgColor(review.status)}`}>
+                        {review.status === 'in_processing' ? 'На рассмотрении' : review.status === 'accepted' ? 'Одобрен' : 'Отклонен'}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-1 mb-3">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Star
+                          key={star}
+                          className={`h-4 w-4 ${star <= review.rating ? 'fill-yellow-400 text-yellow-400' : 'text-muted'
+                            }`}
+                        />
+                      ))}
+                    </div>
+
+                    <div className="text-sm p-3 bg-muted/30 rounded-md flex-1 mb-4 italic break-words whitespace-pre-wrap line-clamp-6" title={review.description}>
+                      &quot;{review.description}&quot;
+                    </div>
+
+                    <div className="text-xs text-muted-foreground mb-4">
+                      Создан: {new Date(review.created_at).toLocaleString('ru-RU')}
+                    </div>
+
+                    {review.status === 'in_processing' && (
+                      <div className="pt-3 border-t flex gap-2 mt-auto">
+                        <button
+                          onClick={() => handleReviewStatusChange(review.id, 'accepted')}
+                          disabled={isUpdating}
+                          className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-green-500 hover:bg-green-600 text-white rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-xs font-medium"
+                        >
+                          {isUpdating ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
+                          Одобрить
+                        </button>
+                        <button
+                          onClick={() => handleReviewStatusChange(review.id, 'rejected')}
+                          disabled={isUpdating}
+                          className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-red-500 hover:bg-red-600 text-white rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-xs font-medium"
+                        >
+                          {isUpdating ? <Loader2 className="h-3 w-3 animate-spin" /> : <X className="h-3 w-3" />}
+                          Отклонить
+                        </button>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+
+          {reviewsTotalCount > 0 && (
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="text-sm text-muted-foreground">Страница {reviewsPage} из {reviewsTotalPages} • Всего: {reviewsTotalCount}</div>
+              <div className="flex items-center gap-2">
+                <button onClick={() => setReviewsPage(1)} disabled={reviewsPage === 1} className="btn-outline px-3 py-1 rounded disabled:opacity-50">«1</button>
+                <button onClick={() => setReviewsPage((p) => Math.max(1, p - 1))} disabled={reviewsPage === 1} className="btn-outline px-3 py-1 rounded disabled:opacity-50">‹</button>
+                {generatePageRange(reviewsPage, reviewsTotalPages, 5).map((p) => (
+                  <button key={p} onClick={() => setReviewsPage(p)} className={`px-3 py-1 rounded transition-colors ${p === reviewsPage ? 'bg-primary text-primary-foreground' : 'btn-outline hover:bg-muted'}`}>{p}</button>
+                ))}
+                <button onClick={() => setReviewsPage((p) => Math.min(reviewsTotalPages, p + 1))} disabled={reviewsPage === reviewsTotalPages} className="btn-outline px-3 py-1 rounded disabled:opacity-50">›</button>
+                <button onClick={() => setReviewsPage(reviewsTotalPages)} disabled={reviewsPage === reviewsTotalPages} className="btn-outline px-3 py-1 rounded disabled:opacity-50">{reviewsTotalPages}»</button>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
       {/* Модальное окно для просмотра чека */}
       {proofPhotoModal && (
-        <div 
+        <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 overflow-auto"
           onClick={() => setProofPhotoModal(null)}
         >
@@ -705,20 +873,20 @@ export default function UsersPage() {
             >
               <X className="h-6 w-6" />
             </button>
-            
+
             {/* Заголовок */}
             <div className="mb-4 flex items-center gap-4">
               <span className="text-white font-medium">Чек оплаты</span>
-              <a 
-                href={proofPhotoModal} 
-                target="_blank" 
+              <a
+                href={proofPhotoModal}
+                target="_blank"
                 rel="noopener noreferrer"
                 className="text-xs text-blue-300 hover:text-blue-200 underline"
               >
                 Открыть оригинал
               </a>
             </div>
-            
+
             {/* Изображение */}
             <img
               src={proofPhotoModal}
