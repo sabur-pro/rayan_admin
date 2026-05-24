@@ -15,6 +15,8 @@ export interface Order {
   user_phone?: string;
   total_price: number;
   total_cost_price: number;
+  delivery_cost: number;
+  grand_total: number;
   profit: number;
   status: string;
   comment: string;

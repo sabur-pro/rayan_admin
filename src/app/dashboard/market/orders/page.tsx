@@ -10,7 +10,9 @@ import {
   MapPin, CreditCard, Banknote
 } from 'lucide-react';
 import { getOrders, updateOrderStatus } from '@/lib/order';
+import { getDeliveryCost, updateDeliveryCost } from '@/lib/setting';
 import { getRoleFromToken } from '@/lib/auth-utils';
+import { Input } from '@/components/ui/input';
 import type { Order, OrderItem } from '../../../../../types/order';
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; icon: typeof Clock }> = {
@@ -38,11 +40,31 @@ export default function OrdersPage() {
   const [expandedOrder, setExpandedOrder] = useState<number | null>(null);
   const [statusDropdown, setStatusDropdown] = useState<number | null>(null);
 
+  // Delivery cost (global setting)
+  const [deliveryCost, setDeliveryCost] = useState<string>('');
+  const [savingDelivery, setSavingDelivery] = useState(false);
+  const [deliverySaved, setDeliverySaved] = useState(false);
+
   const LIMIT = 20;
 
   useEffect(() => {
     setRole(getRoleFromToken());
+    getDeliveryCost().then(c => setDeliveryCost(String(c))).catch(() => {});
   }, []);
+
+  const handleSaveDelivery = async () => {
+    setSavingDelivery(true);
+    setDeliverySaved(false);
+    try {
+      await updateDeliveryCost(Number(deliveryCost) || 0);
+      setDeliverySaved(true);
+      setTimeout(() => setDeliverySaved(false), 2000);
+    } catch (err) {
+      alert('Ошибка: ' + (err as Error).message);
+    } finally {
+      setSavingDelivery(false);
+    }
+  };
 
   const loadOrders = useCallback(async () => {
     setLoading(true);
@@ -108,6 +130,30 @@ export default function OrdersPage() {
             </p>
           </div>
         </div>
+
+        {role === 'admin' && (
+          <Card>
+            <CardContent className="p-3 flex items-end gap-2">
+              <div>
+                <label className="text-xs font-medium mb-1 flex items-center gap-1 text-muted-foreground">
+                  <Truck className="h-3.5 w-3.5" />Стоимость доставки (сом.)
+                </label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={deliveryCost}
+                  onChange={e => setDeliveryCost(e.target.value)}
+                  className="w-40"
+                  placeholder="0"
+                />
+              </div>
+              <Button className="btn-primary" onClick={handleSaveDelivery} disabled={savingDelivery}>
+                {savingDelivery ? <Loader2 className="h-4 w-4 animate-spin" /> : deliverySaved ? '✓ Сохранено' : 'Сохранить'}
+              </Button>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {/* Filter Tabs */}
@@ -183,7 +229,10 @@ export default function OrdersPage() {
                   </div>
 
                   <div className="text-right">
-                    <div className="text-xl font-bold">{order.total_price.toFixed(2)} с.</div>
+                    <div className="text-xl font-bold">{(order.total_price + (order.delivery_cost || 0)).toFixed(2)} с.</div>
+                    {order.delivery_cost > 0 && (
+                      <div className="text-xs text-muted-foreground mt-0.5">вкл. доставку {order.delivery_cost.toFixed(2)} с.</div>
+                    )}
                     {role === 'admin' && (
                       <div className="text-xs text-green-600 font-medium mt-0.5">
                         +{order.profit.toFixed(2)} прибыль
@@ -306,6 +355,22 @@ export default function OrdersPage() {
                           </div>
                         </div>
                       ))}
+                    </div>
+
+                    {/* Totals breakdown */}
+                    <div className="bg-muted/50 rounded-lg p-3 text-sm space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-muted-foreground">Сумма товаров</span>
+                        <span className="font-medium">{order.total_price.toFixed(2)} с.</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-muted-foreground">Доставка</span>
+                        <span className="font-medium">{order.delivery_cost > 0 ? `${order.delivery_cost.toFixed(2)} с.` : 'Бесплатно'}</span>
+                      </div>
+                      <div className="flex items-center justify-between border-t pt-1 mt-1">
+                        <span className="font-semibold">Итого</span>
+                        <span className="font-bold">{(order.total_price + (order.delivery_cost || 0)).toFixed(2)} с.</span>
+                      </div>
                     </div>
 
                     {role === 'admin' && (
