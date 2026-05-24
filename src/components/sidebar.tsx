@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { 
   Wallet, 
@@ -10,15 +11,17 @@ import {
   LogOut,
   Sun,
   Moon,
-  Home
+  Home,
+  ShoppingBag
 } from 'lucide-react';
 import { removeAuthCookies } from '@/lib/cookies';
 import { authApi } from '@/lib/api-client';
 import { AUTH_KEYS } from '@/lib/cookies';
 import { useTheme } from '../../contexts/theme-context';
 import { cn } from '@/lib/utils';
+import { getRoleFromToken } from '@/lib/auth-utils';
 
-const navigation = [
+const adminNavigation = [
   {
     name: 'Главная',
     href: '/dashboard',
@@ -38,13 +41,33 @@ const navigation = [
     name: 'Пользователи',
     href: '/dashboard/users',
     icon: Users,
-  }
+  },
+  {
+    name: 'Магазин',
+    href: '/dashboard/market',
+    icon: ShoppingBag,
+  },
+];
+
+const sellerNavigation = [
+  {
+    name: 'Магазин',
+    href: '/dashboard/market',
+    icon: ShoppingBag,
+  },
 ];
 
 export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const { theme, toggleTheme } = useTheme();
+  const [role, setRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    setRole(getRoleFromToken());
+  }, []);
+
+  const navigation = role === 'seller' ? sellerNavigation : adminNavigation;
 
   const handleLogout = async () => {
     try {
@@ -76,7 +99,9 @@ export default function Sidebar() {
       <nav className="space-y-2 flex-1">
         {navigation.map((item) => {
           const Icon = item.icon;
-          const isActive = pathname === item.href;
+          const isActive = item.href === '/dashboard' 
+            ? pathname === item.href 
+            : pathname.startsWith(item.href);
           
           return (
             <Link key={item.name} href={item.href}>
