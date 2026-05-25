@@ -1,6 +1,6 @@
 // src/lib/user.ts
 import { API_BASE_URL, fetchWithAuth } from '@/lib/http';
-import type { UsersResponse, UsersQueryParams, Subscription, SubscriptionQueryParams } from '../../types/user';
+import type { UsersResponse, UsersQueryParams, Subscription, SubscriptionQueryParams, SubscriptionStats } from '../../types/user';
 
 export async function getUsers(params: UsersQueryParams): Promise<UsersResponse> {
   const searchParams = new URLSearchParams();
@@ -61,6 +61,12 @@ export async function getSubscriptions(params: SubscriptionQueryParams): Promise
   if (params.end_date) {
     searchParams.set('end_date', params.end_date);
   }
+  if (params.sub_type) {
+    searchParams.set('sub_type', params.sub_type);
+  }
+  if (params.validity) {
+    searchParams.set('validity', params.validity);
+  }
 
   const url = `${API_BASE_URL}/user/subscription?${searchParams.toString()}`;
   
@@ -74,6 +80,22 @@ export async function getSubscriptions(params: SubscriptionQueryParams): Promise
     throw new Error(`Failed to fetch subscriptions: ${response.status} ${text}`);
   }
   
+  return response.json();
+}
+
+export async function getSubscriptionStats(): Promise<SubscriptionStats> {
+  const url = `${API_BASE_URL}/admin/subscription/stats`;
+
+  const response = await fetchWithAuth(url, {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' },
+  });
+
+  if (!response.ok) {
+    const text = await response.text().catch(() => '');
+    throw new Error(`Failed to fetch subscription stats: ${response.status} ${text}`);
+  }
+
   return response.json();
 }
 

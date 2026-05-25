@@ -72,4 +72,13 @@ export interface SubscriptionQueryParams {
   limit: number;
   start_date?: string;
   end_date?: string;
+  sub_type?: 'trial' | 'regular' | '';
+  validity?: 'active' | 'expired' | 'approaching' | '';
+}
+
+export interface SubscriptionStats {
+  active: number;
+  expired: number;
+  trial: number;
+  never_purchased: number;
 }

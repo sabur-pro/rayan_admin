@@ -4,12 +4,12 @@
 import React, { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Users, Search, GraduationCap, Building2, BookOpen, Calendar, CreditCard, Check, X, Loader2, MessageSquare, Star } from 'lucide-react';
-import { getUsers, getSubscriptions, updateSubscriptionStatus } from '@/lib/user';
+import { getUsers, getSubscriptions, updateSubscriptionStatus, getSubscriptionStats } from '@/lib/user';
 import { api } from '@/lib/api-client';
 import { getCourses } from '@/lib/course';
 import { getSemesters } from '@/lib/semester';
 import { getReviews, updateReviewStatus } from '@/lib/review';
-import type { User, Subscription } from '../../../../types/user';
+import type { User, Subscription, SubscriptionStats } from '../../../../types/user';
 import type { Review, ReviewStatus } from '../../../../types/review';
 import type { UniversityTranslation } from '../../../../types/university';
 import type { Faculty } from '../../../../types/faculty';
@@ -74,6 +74,10 @@ export default function UsersPage() {
   const [subsHasMore, setSubsHasMore] = useState(true);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [subType, setSubType] = useState<'trial' | 'regular' | ''>('');
+  const [validity, setValidity] = useState<'active' | 'expired' | 'approaching' | ''>('');
+  const [subsStats, setSubsStats] = useState<SubscriptionStats | null>(null);
+  const [subsStatsLoading, setSubsStatsLoading] = useState(false);
   const subsObserverRef = useRef<HTMLDivElement>(null);
   const subsLoadingMore = useRef(false);
   const [updatingSubIds, setUpdatingSubIds] = useState<Set<number>>(new Set());
@@ -302,6 +306,19 @@ export default function UsersPage() {
     return res;
   }
 
+  // Загрузка статистики подписок
+  const loadSubsStats = useCallback(async () => {
+    setSubsStatsLoading(true);
+    try {
+      const stats = await getSubscriptionStats();
+      setSubsStats(stats);
+    } catch (err) {
+      console.error('Failed to load subscription stats:', err);
+    } finally {
+      setSubsStatsLoading(false);
+    }
+  }, []);
+
   // Загрузка подписок
   const loadSubscriptionsData = useCallback(async (pageNum: number, append = false) => {
     if (subsLoadingMore.current) return;
@@ -315,6 +332,8 @@ export default function UsersPage() {
         limit: subsLimit,
         start_date: startDate || undefined,
         end_date: endDate || undefined,
+        sub_type: subType || undefined,
+        validity: validity || undefined,
       });
       if (append) {
         setSubscriptions((prev) => [...prev, ...res]);
@@ -329,7 +348,7 @@ export default function UsersPage() {
       setSubsLoading(false);
       subsLoadingMore.current = false;
     }
-  }, [subsLimit, startDate, endDate]);
+  }, [subsLimit, startDate, endDate, subType, validity]);
 
   // Загрузка подписок при переключении таба
   useEffect(() => {
@@ -338,8 +357,9 @@ export default function UsersPage() {
       setSubsPage(1);
       setSubsHasMore(true);
       loadSubscriptionsData(1, false);
+      loadSubsStats();
     }
-  }, [activeTab, startDate, endDate, loadSubscriptionsData]);
+  }, [activeTab, startDate, endDate, subType, validity, loadSubscriptionsData, loadSubsStats]);
 
   // Загрузка отзывов
   const loadReviewsData = useCallback(async () => {
@@ -617,9 +637,29 @@ export default function UsersPage() {
       {/* Контент для Подписок */}
       {activeTab === 'subscriptions' && (
         <>
+          {/* Статистика */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {[
+              { label: 'Активных', value: subsStats?.active, color: 'text-green-600', bg: 'bg-green-500/10' },
+              { label: 'Просрочено', value: subsStats?.expired, color: 'text-red-600', bg: 'bg-red-500/10' },
+              { label: 'В пробнике', value: subsStats?.trial, color: 'text-blue-600', bg: 'bg-blue-500/10' },
+              { label: 'Без подписки', value: subsStats?.never_purchased, color: 'text-muted-foreground', bg: 'bg-muted/50' },
+            ].map((s) => (
+              <Card key={s.label} className={`glass ${s.bg}`}>
+                <CardContent className="p-4 flex flex-col gap-1">
+                  <span className="text-xs text-muted-foreground">{s.label}</span>
+                  <span className={`text-2xl font-bold ${s.color}`}>
+                    {subsStatsLoading ? '...' : (s.value ?? '—')}
+                  </span>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {/* Фильтры */}
           <Card className="glass">
-            <CardContent className="p-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <CardContent className="p-4 space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="flex flex-col gap-1">
                   <label className="text-sm text-muted-foreground flex items-center gap-1">
                     <Calendar className="h-4 w-4" />
@@ -646,11 +686,52 @@ export default function UsersPage() {
                 </div>
                 <div className="flex flex-col gap-1 justify-end">
                   <button
-                    onClick={() => { setStartDate(''); setEndDate(''); }}
+                    onClick={() => { setStartDate(''); setEndDate(''); setSubType(''); setValidity(''); }}
                     className="px-4 py-2 rounded-md border hover:bg-muted transition-colors"
                   >
-                    Сбросить фильтры
+                    Сбросить все
                   </button>
+                </div>
+              </div>
+
+              {/* Тип подписки */}
+              <div className="flex flex-col gap-2">
+                <span className="text-sm text-muted-foreground">Тип подписки</span>
+                <div className="flex flex-wrap gap-2">
+                  {([['', 'Все'], ['trial', 'Пробник (≤7 дней)'], ['regular', 'Основная']] as const).map(([val, label]) => (
+                    <button
+                      key={val}
+                      onClick={() => setSubType(val)}
+                      className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors border ${
+                        subType === val ? 'bg-primary text-primary-foreground border-primary' : 'hover:bg-muted border-transparent'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Статус по времени */}
+              <div className="flex flex-col gap-2">
+                <span className="text-sm text-muted-foreground">Статус по времени</span>
+                <div className="flex flex-wrap gap-2">
+                  {([['', 'Все'], ['active', 'Активна'], ['approaching', 'Скоро истекает (≤14 дней)'], ['expired', 'Просрочена']] as const).map(([val, label]) => (
+                    <button
+                      key={val}
+                      onClick={() => setValidity(val)}
+                      className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors border ${
+                        validity === val
+                          ? val === 'expired' ? 'bg-red-500 text-white border-red-500'
+                            : val === 'approaching' ? 'bg-yellow-500 text-white border-yellow-500'
+                            : val === 'active' ? 'bg-green-500 text-white border-green-500'
+                            : 'bg-primary text-primary-foreground border-primary'
+                          : 'hover:bg-muted border-transparent'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
                 </div>
               </div>
             </CardContent>
