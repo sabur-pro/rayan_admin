@@ -102,7 +102,7 @@ export default function FinancesPage() {
   }, [dateFrom, dateTo, transactionFilter]);
 
   const loadFounders = useCallback(async () => {
-    setFounders(await getFounders());
+    setFounders((await getFounders()) ?? []);
   }, []);
 
   const reloadAll = useCallback(async () => {
@@ -357,7 +357,7 @@ export default function FinancesPage() {
               value={fmtMoney(stats.total_income)}
               color="green"
               icon={<TrendingUp className="h-6 w-6 text-green-500" />}
-              sub={`Магазин: ${fmtMoney(stats.income_by_source.market || 0)}`}
+              sub={`Магазин: ${fmtMoney(stats.income_by_source?.market || 0)}`}
             />
             <StatCard
               title="Общий расход"
@@ -429,7 +429,7 @@ export default function FinancesPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {stats.tax.months.length === 0 ? (
+              {(stats.tax.months?.length ?? 0) === 0 ? (
                 <div className="text-center py-6 text-muted-foreground text-sm">Нет оборота за период</div>
               ) : (
                 <div className="overflow-x-auto">
@@ -446,7 +446,7 @@ export default function FinancesPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y">
-                      {stats.tax.months.map((m) => (
+                      {(stats.tax.months ?? []).map((m) => (
                         <tr key={m.month} className="hover:bg-muted/30 transition-colors">
                           <td className="px-4 py-3 text-sm font-medium">{monthLabelRu(m.month)}</td>
                           <td className="px-4 py-3 text-sm">{fmtMoney(m.turnover)}</td>

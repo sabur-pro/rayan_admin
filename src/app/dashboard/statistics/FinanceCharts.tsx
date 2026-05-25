@@ -34,8 +34,8 @@ const tooltipStyle: React.CSSProperties = {
   fontSize: 12,
 };
 
-export function MonthlyChart({ data }: { data: MonthlyPoint[] }) {
-  const chartData = data.map((d) => ({
+export function MonthlyChart({ data }: { data: MonthlyPoint[] | null | undefined }) {
+  const chartData = (data ?? []).map((d) => ({
     month: monthLabel(d.month),
     Доход: d.income,
     Расход: d.expense,
@@ -115,8 +115,8 @@ function BreakdownPie({
   );
 }
 
-export function IncomeSourcePie({ data }: { data: Record<string, number> }) {
-  const items = Object.entries(data).map(([key, value]) => ({
+export function IncomeSourcePie({ data }: { data: Record<string, number> | null | undefined }) {
+  const items = Object.entries(data ?? {}).map(([key, value]) => ({
     key,
     name: INCOME_SOURCE_LABELS[key as keyof typeof INCOME_SOURCE_LABELS] || key,
     value,
@@ -124,8 +124,8 @@ export function IncomeSourcePie({ data }: { data: Record<string, number> }) {
   return <BreakdownPie data={items} colors={INCOME_COLORS} emptyText="Нет доходов за период" />;
 }
 
-export function ExpenseCategoryPie({ data }: { data: Record<string, number> }) {
-  const items = Object.entries(data).map(([key, value]) => ({
+export function ExpenseCategoryPie({ data }: { data: Record<string, number> | null | undefined }) {
+  const items = Object.entries(data ?? {}).map(([key, value]) => ({
     key,
     name: EXPENSE_CATEGORY_LABELS[key as keyof typeof EXPENSE_CATEGORY_LABELS] || key,
     value,
