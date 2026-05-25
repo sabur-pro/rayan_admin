@@ -107,10 +107,44 @@ export default function MaterialsPage() {
 
   return (
     <div className="space-y-6">
+      {/* AI Exam format guide — shown only for type 10 */}
+      {material_type_id === 10 && (
+        <div className="rounded-xl border-2 border-purple-400 bg-purple-50 dark:bg-purple-950/30 p-5 space-y-4">
+          <div className="flex items-center gap-2">
+            <span className="text-2xl">🤖</span>
+            <h2 className="text-lg font-bold text-purple-700 dark:text-purple-300">AI Exam — формат файла</h2>
+          </div>
+          <p className="text-sm text-purple-800 dark:text-purple-200">
+            Загружайте файлы в формате <strong>.json</strong> (Quill Delta). Каждый файл содержит одну инструкцию, вопросы и эталонные ответы.
+          </p>
+          <div className="rounded-lg bg-gray-900 text-green-300 text-xs font-mono p-4 overflow-x-auto whitespace-pre">
+{`### Ты преподаватель анатомии. Оценивай ответы студентов строго по медицинской терминологии.
+### Важно: учитывай полноту ответа и точность названий.
+
+??? Назовите кости плечевого пояса.
++++ Лопатка и ключица.
+
+??? Что такое суставной хрящ?
++++ Гиалиновый хрящ, покрывающий суставные поверхности костей для снижения трения и амортизации.
+
+??? Какова функция синовиальной жидкости?
++++ Смазка суставных поверхностей, питание хряща и амортизация ударов.`}
+          </div>
+          <ul className="text-sm text-purple-800 dark:text-purple-200 space-y-1 list-disc list-inside">
+            <li><code className="bg-purple-200 dark:bg-purple-800 px-1 rounded">###</code> — инструкция для AI (что за предмет, на что обращать внимание при проверке)</li>
+            <li><code className="bg-purple-200 dark:bg-purple-800 px-1 rounded">???</code> — вопрос</li>
+            <li><code className="bg-purple-200 dark:bg-purple-800 px-1 rounded">+++</code> — эталонный ответ на предыдущий вопрос</li>
+          </ul>
+          <p className="text-xs text-purple-600 dark:text-purple-400">
+            Порядок: инструкция → вопрос → ответ → вопрос → ответ … Студент видит только вопросы. Правильные ответы хранятся на сервере и используются только для оценки AI.
+          </p>
+        </div>
+      )}
+
       <div className="flex items-center justify-between gap-4 mb-4">
         <div className="flex items-center gap-4">
-          <button 
-            className="btn-outline px-3 py-1 rounded hover:bg-accent transition-colors" 
+          <button
+            className="btn-outline px-3 py-1 rounded hover:bg-accent transition-colors"
             onClick={() => router.back()}
           >
             ← Назад
