@@ -2,11 +2,10 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
-import { Download, Upload, Home, ImagePlus } from 'lucide-react';
+import { Download, Upload, Home } from 'lucide-react';
 import 'react-quill/dist/quill.snow.css';
 import 'katex/dist/katex.min.css';
 import { useRouter } from 'next/navigation';
-import FileGallery from '@/components/FileGallery';
 
 interface QuillInstance {
   getContents: () => unknown;
@@ -21,7 +20,6 @@ interface QuillInstance {
 export default function PublicEditorPage() {
   const router = useRouter();
   const [fileName, setFileName] = useState('document.json');
-  const [showGallery, setShowGallery] = useState(false);
   const editorHostRef = useRef<HTMLDivElement>(null);
   const toolbarRef = useRef<HTMLDivElement>(null);
   const quillRef = useRef<QuillInstance | null>(null);
@@ -264,14 +262,6 @@ export default function PublicEditorPage() {
     event.target.value = '';
   };
 
-  const handleSelectFile = (url: string) => {
-    if (quillRef.current) {
-      const quill = quillRef.current;
-      const range = quill.getSelection?.(true) || { index: 0 };
-      quill.insertEmbed?.(range.index, 'image', url, 'user');
-    }
-  };
-
   const handleClose = () => {
     const html = editorHostRef.current?.querySelector('.ql-editor')?.innerHTML || '';
     const textContent = html.replace(/<[^>]*>/g, '').trim();
@@ -300,17 +290,6 @@ export default function PublicEditorPage() {
             />
           </div>
           <div className="flex items-center gap-3">
-            <button
-              onClick={() => setShowGallery(!showGallery)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors font-medium ${showGallery
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-accent hover:bg-accent/80'
-                }`}
-              title="Галерея файлов"
-            >
-              <ImagePlus className="w-5 h-5" />
-              Галерея
-            </button>
             <button
               onClick={handleUploadJSON}
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
@@ -345,20 +324,13 @@ export default function PublicEditorPage() {
           </div>
         </div>
 
-        {/* Main content area with editor and gallery */}
+        {/* Main content area with editor */}
         <div className="flex-1 overflow-hidden flex">
           {/* Редактор Quill */}
           <div className="flex-1 overflow-hidden flex flex-col quill-fullscreen">
             <div ref={toolbarRef} className="ql-toolbar ql-snow"></div>
             <div ref={editorHostRef} className="ql-container ql-snow" style={{ flex: 1 }}></div>
           </div>
-
-          {/* File Gallery Sidebar */}
-          {showGallery && (
-            <div className="w-96 border-l bg-background flex flex-col">
-              <FileGallery lang="ru" onSelectFile={handleSelectFile} />
-            </div>
-          )}
         </div>
       </div>
 

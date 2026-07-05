@@ -59,3 +59,19 @@ export async function fetchSuspendedFiles(
   return response.json();
 }
 
+/**
+ * Delete an uploaded file by its path
+ */
+export async function deleteFile(path: string): Promise<void> {
+  const response = await fetchWithAuth(`${API_BASE_URL}/files`, {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ path }),
+  });
+
+  if (!response.ok) {
+    const text = await response.text().catch(() => '');
+    throw new Error(`Не удалось удалить файл: ${response.status} ${text}`);
+  }
+}
+

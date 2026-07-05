@@ -2,8 +2,8 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Upload, Copy, Check, Image as ImageIcon } from 'lucide-react';
-import { uploadFile, fetchSuspendedFiles, type UploadedFile } from '@/lib/files';
+import { Upload, Copy, Check, Trash2, Image as ImageIcon } from 'lucide-react';
+import { uploadFile, fetchSuspendedFiles, deleteFile, type UploadedFile } from '@/lib/files';
 
 interface FileGalleryProps {
   lang: string;
@@ -28,6 +28,7 @@ export default function FileGallery({ lang: initialLang, onSelectFile }: FileGal
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copiedPath, setCopiedPath] = useState<string | null>(null);
+  const [deletingPath, setDeletingPath] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const observerTarget = useRef<HTMLDivElement>(null);
   const loadingMore = useRef(false);
@@ -137,6 +138,20 @@ export default function FileGallery({ lang: initialLang, onSelectFile }: FileGal
     }
   };
 
+  const handleDelete = async (path: string) => {
+    if (!confirm('Удалить это изображение из галереи?')) return;
+
+    setDeletingPath(path);
+    try {
+      await deleteFile(path);
+      setFiles((prev) => prev.filter((f) => f.path !== path));
+    } catch (e: unknown) {
+      alert(e instanceof Error ? e.message : 'Не удалось удалить файл');
+    } finally {
+      setDeletingPath(null);
+    }
+  };
+
   return (
     <div className="flex flex-col h-full bg-gradient-to-b from-background to-muted/20">
       {/* Header with language selector and upload button */}
@@ -238,22 +253,32 @@ export default function FileGallery({ lang: initialLang, onSelectFile }: FileGal
                   <p className="text-xs text-muted-foreground truncate mb-2 font-medium" title={file.name}>
                     {file.name}
                   </p>
-                  <button
-                    onClick={() => handleCopyPath(file.path)}
-                    className="w-full flex items-center justify-center gap-2 px-3 py-2 text-xs font-medium bg-accent hover:bg-primary hover:text-primary-foreground rounded-lg transition-all shadow-sm hover:shadow-md"
-                  >
-                    {copiedPath === file.path ? (
-                      <>
-                        <Check className="w-3.5 h-3.5" />
-                        Скопировано
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="w-3.5 h-3.5" />
-                        Копировать
-                      </>
-                    )}
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleCopyPath(file.path)}
+                      className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-xs font-medium bg-accent hover:bg-primary hover:text-primary-foreground rounded-lg transition-all shadow-sm hover:shadow-md"
+                    >
+                      {copiedPath === file.path ? (
+                        <>
+                          <Check className="w-3.5 h-3.5" />
+                          Скопировано
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-3.5 h-3.5" />
+                          Копировать
+                        </>
+                      )}
+                    </button>
+                    <button
+                      onClick={() => handleDelete(file.path)}
+                      disabled={deletingPath === file.path}
+                      title="Удалить изображение"
+                      className="flex items-center justify-center px-3 py-2 text-xs font-medium bg-accent hover:bg-red-600 hover:text-white rounded-lg transition-all shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
