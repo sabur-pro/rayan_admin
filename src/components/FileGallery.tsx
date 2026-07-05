@@ -242,43 +242,51 @@ export default function FileGallery({ lang: initialLang, onSelectFile }: FileGal
                     }}
                   />
                   {onSelectFile && (
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center">
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center pointer-events-none">
                       <div className="transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
                         <span className="text-white font-semibold text-sm px-4 py-2 bg-primary rounded-full shadow-lg">Вставить изображение</span>
                       </div>
                     </div>
                   )}
+                  {/* Delete button — absolutely positioned in the image corner so it never
+                      competes for row width with the copy button (which, in the narrow 3-col
+                      gallery, would push it past the tile's overflow-hidden edge and hide it). */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDelete(file.path);
+                    }}
+                    disabled={deletingPath === file.path}
+                    title="Удалить изображение"
+                    className="absolute top-2 right-2 z-10 flex items-center justify-center w-8 h-8 rounded-full bg-red-600 text-white shadow-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {deletingPath === file.path ? (
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <Trash2 className="w-4 h-4" />
+                    )}
+                  </button>
                 </div>
                 <div className="p-3 bg-gradient-to-b from-card to-muted/30">
                   <p className="text-xs text-muted-foreground truncate mb-2 font-medium" title={file.name}>
                     {file.name}
                   </p>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => handleCopyPath(file.path)}
-                      className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-xs font-medium bg-accent hover:bg-primary hover:text-primary-foreground rounded-lg transition-all shadow-sm hover:shadow-md"
-                    >
-                      {copiedPath === file.path ? (
-                        <>
-                          <Check className="w-3.5 h-3.5" />
-                          Скопировано
-                        </>
-                      ) : (
-                        <>
-                          <Copy className="w-3.5 h-3.5" />
-                          Копировать
-                        </>
-                      )}
-                    </button>
-                    <button
-                      onClick={() => handleDelete(file.path)}
-                      disabled={deletingPath === file.path}
-                      title="Удалить изображение"
-                      className="flex items-center justify-center px-3 py-2 text-xs font-medium bg-accent hover:bg-red-600 hover:text-white rounded-lg transition-all shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
+                  <button
+                    onClick={() => handleCopyPath(file.path)}
+                    className="w-full flex items-center justify-center gap-2 px-3 py-2 text-xs font-medium bg-accent hover:bg-primary hover:text-primary-foreground rounded-lg transition-all shadow-sm hover:shadow-md"
+                  >
+                    {copiedPath === file.path ? (
+                      <>
+                        <Check className="w-3.5 h-3.5" />
+                        Скопировано
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3.5 h-3.5" />
+                        Копировать
+                      </>
+                    )}
+                  </button>
                 </div>
               </div>
             ))}
