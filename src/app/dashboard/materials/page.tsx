@@ -11,7 +11,6 @@ import { FileText, Download, ExternalLink, Calendar, Plus, Edit, Trash2 } from '
 import FileViewer from '@/components/FileViewer';
 import CreateMaterialModal from '@/components/CreateMaterialModal';
 import EditMaterialModal from '@/components/EditMaterialModal';
-import QuillEditor from '@/components/QuillEditor';
 
 export default function MaterialsPage() {
   const searchParams = useSearchParams();
@@ -29,7 +28,6 @@ export default function MaterialsPage() {
   const [selectedMaterial, setSelectedMaterial] = useState<Material | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingMaterial, setEditingMaterial] = useState<Material | null>(null);
-  const [isMarkdownEditorOpen, setIsMarkdownEditorOpen] = useState(false);
   const [deletingMaterialId, setDeletingMaterialId] = useState<number | null>(null);
 
   const loadMaterials = React.useCallback(() => {
@@ -160,7 +158,7 @@ export default function MaterialsPage() {
             Добавить материал
           </button>
           <button
-            onClick={() => setIsMarkdownEditorOpen(true)}
+            onClick={() => router.push('/document-editor')}
             className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
           >
             <FileText className="w-5 h-5" />
@@ -306,12 +304,6 @@ export default function MaterialsPage() {
         material={editingMaterial}
         langCode={lang_code}
         onMaterialUpdated={loadMaterials}
-      />
-
-      {/* Quill редактор для создания документа Markdown */}
-      <QuillEditor
-        isOpen={isMarkdownEditorOpen}
-        onClose={() => setIsMarkdownEditorOpen(false)}
       />
     </div>
   );
