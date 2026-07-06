@@ -12,6 +12,12 @@ import {
   getDocThemeStyle,
   useDocThemePreference,
 } from '@/lib/docTheme';
+import {
+  registerQuillSizes,
+  QUILL_SIZE_TOOLBAR_HTML,
+} from '@/lib/quillSize';
+
+interface QuillRange { index: number; length: number }
 
 interface QuillInstance {
   getContents: () => unknown;
@@ -19,23 +25,33 @@ interface QuillInstance {
   clipboard: {
     dangerouslyPasteHTML: (html: string) => void;
   };
-  getSelection?: (value: boolean) => { index: number } | null;
+  getSelection?: (value?: boolean) => QuillRange | null;
   insertEmbed?: (index: number, type: string, url: string, source: string) => void;
+  format?: (name: string, value: unknown) => void;
+  setSelection?: (index: number, length: number) => void;
+  focus?: () => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  on?: (event: string, handler: (...args: any[]) => void) => void;
 }
 
 export default function PublicEditorPage() {
   const router = useRouter();
   const [fileName, setFileName] = useState('document.json');
   const [previewTheme, changeTheme] = useDocThemePreference();
+  const [customSize, setCustomSize] = useState('');
   const editorHostRef = useRef<HTMLDivElement>(null);
   const toolbarRef = useRef<HTMLDivElement>(null);
   const quillRef = useRef<QuillInstance | null>(null);
+  const lastRangeRef = useRef<QuillRange | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     let mounted = true;
     (async () => {
       const Quill = (await import('quill')).default;
+
+      // Регистрируем размеры шрифта (px + произвольные значения)
+      registerQuillSizes(Quill);
 
       // Импортируем KaTeX для формул
       const katex = (await import('katex')).default;
@@ -55,6 +71,7 @@ export default function PublicEditorPage() {
               <option selected></option>
             </select>
           </span>
+          ${QUILL_SIZE_TOOLBAR_HTML}
           <span class="ql-formats">
             <button class="ql-bold"></button>
             <button class="ql-italic"></button>
@@ -210,6 +227,12 @@ export default function PublicEditorPage() {
         q.clipboard.dangerouslyPasteHTML('<h1>Новый документ</h1><p>Начните создание вашего документа здесь...</p>');
 
         quillRef.current = q as QuillInstance;
+
+        // Remember the last editor selection so the custom size input (which steals focus)
+        // can restore it before applying a size.
+        (q as QuillInstance).on?.('selection-change', (range: QuillRange | null) => {
+          if (range) lastRangeRef.current = range;
+        });
       }
     })();
     return () => {
@@ -269,6 +292,17 @@ export default function PublicEditorPage() {
     event.target.value = '';
   };
 
+  // Apply an arbitrary font size (in px) to the current selection / cursor
+  const applyCustomSize = () => {
+    const q = quillRef.current;
+    const n = parseInt(customSize.trim(), 10);
+    if (!q || isNaN(n) || n < 6 || n > 400) return;
+    q.focus?.();
+    const range = lastRangeRef.current;
+    if (range) q.setSelection?.(range.index, range.length);
+    q.format?.('size', `${n}px`);
+  };
+
   const handleClose = () => {
     const html = editorHostRef.current?.querySelector('.ql-editor')?.innerHTML || '';
     const textContent = html.replace(/<[^>]*>/g, '').trim();
@@ -295,6 +329,26 @@ export default function PublicEditorPage() {
               className="px-3 py-2 text-sm border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary max-w-xs"
               placeholder="Имя файла"
             />
+            {/* Custom font-size: type any px value and apply to the selection */}
+            <div className="flex items-center gap-1" title="Свой размер шрифта (px)">
+              <span className="text-xs text-muted-foreground">Размер</span>
+              <input
+                type="number"
+                min={6}
+                max={400}
+                value={customSize}
+                onChange={(e) => setCustomSize(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') applyCustomSize(); }}
+                className="w-16 px-2 py-2 text-sm border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+                placeholder="px"
+              />
+              <button
+                onClick={applyCustomSize}
+                className="px-3 py-2 text-sm font-medium bg-accent hover:bg-accent/80 rounded-lg transition-colors"
+              >
+                OK
+              </button>
+            </div>
           </div>
           <div className="flex items-center gap-3">
             <DocThemeSwitcher value={previewTheme} onChange={changeTheme} />
