@@ -6,6 +6,12 @@ import { Download, Upload, Home } from 'lucide-react';
 import 'react-quill/dist/quill.snow.css';
 import 'katex/dist/katex.min.css';
 import { useRouter } from 'next/navigation';
+import {
+  DocThemeSwitcher,
+  DocEditorThemeStyles,
+  getDocThemeStyle,
+  useDocThemePreference,
+} from '@/lib/docTheme';
 
 interface QuillInstance {
   getContents: () => unknown;
@@ -20,6 +26,7 @@ interface QuillInstance {
 export default function PublicEditorPage() {
   const router = useRouter();
   const [fileName, setFileName] = useState('document.json');
+  const [previewTheme, changeTheme] = useDocThemePreference();
   const editorHostRef = useRef<HTMLDivElement>(null);
   const toolbarRef = useRef<HTMLDivElement>(null);
   const quillRef = useRef<QuillInstance | null>(null);
@@ -290,6 +297,7 @@ export default function PublicEditorPage() {
             />
           </div>
           <div className="flex items-center gap-3">
+            <DocThemeSwitcher value={previewTheme} onChange={changeTheme} />
             <button
               onClick={handleUploadJSON}
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
@@ -327,190 +335,14 @@ export default function PublicEditorPage() {
         {/* Main content area with editor */}
         <div className="flex-1 overflow-hidden flex">
           {/* Редактор Quill */}
-          <div className="flex-1 overflow-hidden flex flex-col quill-fullscreen">
+          <div className="flex-1 overflow-hidden flex flex-col quill-fullscreen" style={getDocThemeStyle(previewTheme)}>
             <div ref={toolbarRef} className="ql-toolbar ql-snow"></div>
             <div ref={editorHostRef} className="ql-container ql-snow" style={{ flex: 1 }}></div>
           </div>
         </div>
       </div>
 
-      <style jsx global>{`
-        .quill-fullscreen {
-          display: flex;
-          flex-direction: column;
-          height: 100%;
-        }
-
-        .quill-fullscreen .ql-container {
-          flex: 1;
-          overflow-y: auto;
-          font-size: 16px;
-        }
-
-        .quill-fullscreen .ql-editor {
-          min-height: 100%;
-          padding: 40px;
-          font-size: 16px;
-          line-height: 1.6;
-        }
-
-        .quill-fullscreen .ql-editor h1 {
-          font-size: 2.5rem;
-          font-weight: 700;
-          margin-top: 2rem;
-          margin-bottom: 1rem;
-          line-height: 1.2;
-        }
-
-        .quill-fullscreen .ql-editor h2 {
-          font-size: 2rem;
-          font-weight: 700;
-          margin-top: 1.5rem;
-          margin-bottom: 0.75rem;
-          line-height: 1.3;
-        }
-
-        .quill-fullscreen .ql-editor h3 {
-          font-size: 1.5rem;
-          font-weight: 600;
-          margin-top: 1.25rem;
-          margin-bottom: 0.5rem;
-          line-height: 1.4;
-        }
-
-        .quill-fullscreen .ql-editor p {
-          margin-bottom: 1rem;
-        }
-
-        .quill-fullscreen .ql-editor ul,
-        .quill-fullscreen .ql-editor ol {
-          margin-bottom: 1rem;
-          padding-left: 1.5rem;
-        }
-
-        .quill-fullscreen .ql-editor li {
-          margin-bottom: 0.5rem;
-        }
-
-        .quill-fullscreen .ql-editor img {
-          max-width: 100%;
-          height: auto;
-          display: block;
-          margin: 1.5rem 0;
-          border-radius: 8px;
-          cursor: pointer;
-        }
-
-        .quill-fullscreen .ql-editor img:hover {
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        }
-
-        .quill-fullscreen .ql-editor blockquote {
-          border-left: 4px solid #3b82f6;
-          padding-left: 1rem;
-          margin: 1.5rem 0;
-          font-style: italic;
-          color: #6b7280;
-        }
-
-        .quill-fullscreen .ql-editor pre {
-          background-color: #f3f4f6;
-          padding: 1rem;
-          border-radius: 6px;
-          overflow-x: auto;
-          margin: 1rem 0;
-        }
-
-        .quill-fullscreen .ql-toolbar {
-          border: none;
-          border-bottom: 1px solid #e5e7eb;
-          background: #f9fafb;
-          padding: 12px;
-        }
-
-        .quill-fullscreen .ql-toolbar .ql-stroke {
-          stroke: #374151;
-        }
-
-        .quill-fullscreen .ql-toolbar .ql-fill {
-          fill: #374151;
-        }
-
-        .quill-fullscreen .ql-toolbar button:hover {
-          background-color: #e5e7eb;
-          border-radius: 4px;
-        }
-
-        .quill-fullscreen .ql-toolbar button.ql-active {
-          background-color: #3b82f6;
-          color: white;
-          border-radius: 4px;
-        }
-
-        .quill-fullscreen .ql-toolbar button.ql-active .ql-stroke {
-          stroke: white;
-        }
-
-        .quill-fullscreen .ql-toolbar button.ql-active .ql-fill {
-          fill: white;
-        }
-
-        /* Стили для формул */
-        .quill-fullscreen .ql-editor .ql-formula {
-          display: inline-block;
-          padding: 4px 8px;
-          background: rgba(59, 130, 246, 0.1);
-          border: 1px solid rgba(59, 130, 246, 0.3);
-          border-radius: 4px;
-          margin: 0 4px;
-          cursor: pointer;
-        }
-
-        .quill-fullscreen .ql-editor .ql-formula:hover {
-          background: rgba(59, 130, 246, 0.2);
-        }
-
-        .quill-fullscreen .ql-toolbar .ql-formula {
-          font-size: 16px;
-          font-weight: bold;
-        }
-
-        /* Стили для KaTeX формул с поддержкой тёмной темы */
-        .katex {
-          color: #111827 !important;
-        }
-
-        .katex .katex-html,
-        .katex .base,
-        .katex .strut,
-        .katex .mord,
-        .katex .mbin,
-        .katex .mrel,
-        .katex .mop,
-        .katex .mpunct,
-        .katex .mopen,
-        .katex .mclose,
-        .katex .minner,
-        .katex .mfrac,
-        .katex .mspace {
-          color: inherit;
-        }
-
-        /* Стили для тёмной темы */
-        .dark .katex,
-        .dark .katex * {
-          color: #f9fafb !important;
-        }
-
-        .dark .quill-fullscreen .ql-editor .ql-formula {
-          background: rgba(59, 130, 246, 0.2);
-          border-color: rgba(59, 130, 246, 0.4);
-        }
-
-        .dark .quill-fullscreen .ql-editor .ql-formula:hover {
-          background: rgba(59, 130, 246, 0.3);
-        }
-      `}</style>
+      <DocEditorThemeStyles />
     </div>
   );
 }
