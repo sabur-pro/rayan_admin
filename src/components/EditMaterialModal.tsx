@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { fetchWithAuth, API_BASE_URL } from '@/lib/http';
 import { X, Loader2, Upload, FileText, Trash2 } from 'lucide-react';
 import type { Material } from '../../types/material';
-import { isAudioFile } from '@/lib/fileUtils';
+import { isAudioFile, isVideoFile } from '@/lib/fileUtils';
 import AudioTimecodeManager from '@/components/AudioTimecodeManager';
 
 interface EditMaterialModalProps {
@@ -292,21 +292,21 @@ export default function EditMaterialModal({
               </div>
             )}
 
-            {/* Таймкоды для аудиофайлов */}
-            {translation?.paths && translation.paths.filter((p) => isAudioFile(p)).length > 0 && (
+            {/* Таймкоды для аудио/видео файлов */}
+            {translation?.paths && translation.paths.filter((p) => isAudioFile(p) || isVideoFile(p)).length > 0 && (
               <div>
                 <label className="block text-sm font-medium mb-2">
-                  Аудио и таймкоды
+                  Аудио / Видео и таймкоды
                 </label>
                 <div className="space-y-3">
                   {translation.paths
-                    .filter((p) => isAudioFile(p))
-                    .map((audioPath) => (
+                    .filter((p) => isAudioFile(p) || isVideoFile(p))
+                    .map((mediaPath) => (
                       <AudioTimecodeManager
-                        key={audioPath}
+                        key={mediaPath}
                         materialId={material.id}
                         langCode={langCode}
-                        audioPath={audioPath}
+                        audioPath={mediaPath}
                       />
                     ))}
                 </div>

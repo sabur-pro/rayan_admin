@@ -4,6 +4,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Loader2, Plus, Trash2, Clock, Play, Pencil, Check, X } from 'lucide-react';
 import { API_BASE_URL } from '@/lib/http';
+import { isVideoFile } from '@/lib/fileUtils';
 import {
   AudioTimecode,
   getAudioTimecodes,
@@ -33,7 +34,8 @@ export default function AudioTimecodeManager({
   langCode,
   audioPath,
 }: AudioTimecodeManagerProps) {
-  const audioRef = useRef<HTMLAudioElement>(null);
+  const mediaRef = useRef<HTMLVideoElement | HTMLAudioElement>(null);
+  const isVideo = isVideoFile(audioPath);
 
   const [timecodes, setTimecodes] = useState<AudioTimecode[]>([]);
   const [loading, setLoading] = useState(false);
@@ -66,15 +68,15 @@ export default function AudioTimecodeManager({
   }, [load]);
 
   const captureCurrentTime = () => {
-    if (audioRef.current) {
-      setTimeInput(formatTimecode(audioRef.current.currentTime));
+    if (mediaRef.current) {
+      setTimeInput(formatTimecode(mediaRef.current.currentTime));
     }
   };
 
   const seekTo = (seconds: number) => {
-    if (audioRef.current) {
-      audioRef.current.currentTime = seconds;
-      audioRef.current.play().catch(() => {});
+    if (mediaRef.current) {
+      mediaRef.current.currentTime = seconds;
+      mediaRef.current.play().catch(() => {});
     }
   };
 
@@ -167,14 +169,30 @@ export default function AudioTimecodeManager({
     <div className="rounded-lg border bg-accent/5 p-4 space-y-4">
       <div className="flex items-center gap-2">
         <Clock className="w-4 h-4 text-primary" />
-        <h4 className="text-sm font-semibold">Таймкоды аудио</h4>
+        <h4 className="text-sm font-semibold">{isVideo ? 'Таймкоды видео' : 'Таймкоды аудио'}</h4>
         <span className="text-xs text-muted-foreground truncate">
           {audioPath.split('/').pop()}
         </span>
       </div>
 
-      {/* Плеер: слушаем и ловим текущее время */}
-      <audio ref={audioRef} src={toAudioUrl(audioPath)} controls className="w-full" preload="metadata" />
+      {/* Плеер: смотрим/слушаем и ловим текущее время */}
+      {isVideo ? (
+        <video
+          ref={mediaRef as React.RefObject<HTMLVideoElement>}
+          src={toAudioUrl(audioPath)}
+          controls
+          className="w-full max-h-72 rounded-lg bg-black"
+          preload="metadata"
+        />
+      ) : (
+        <audio
+          ref={mediaRef as React.RefObject<HTMLAudioElement>}
+          src={toAudioUrl(audioPath)}
+          controls
+          className="w-full"
+          preload="metadata"
+        />
+      )}
 
       {error && (
         <div className="p-2 bg-destructive/10 border border-destructive/20 rounded text-destructive text-xs">
