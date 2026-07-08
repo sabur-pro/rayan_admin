@@ -391,14 +391,14 @@ export default function QuillEditor({ isOpen, onClose }: QuillEditorProps) {
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex flex-col" style={{ zIndex: 99999 }}>
       <div className="w-full h-full bg-background flex flex-col">
         {/* Верхняя панель */}
-        <div className="border-b bg-background px-6 py-4 flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-4 flex-1">
-            <h2 className="text-2xl font-bold">Создать документ</h2>
+        <div className="border-b bg-background px-3 md:px-6 py-3 md:py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3 shrink-0">
+          <div className="flex flex-wrap items-center gap-2 md:gap-4 min-w-0">
+            <h2 className="text-lg md:text-2xl font-bold">Создать документ</h2>
             <input
               type="text"
               value={fileName}
               onChange={(e) => setFileName(e.target.value)}
-              className="px-3 py-2 text-sm border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary max-w-xs"
+              className="px-3 py-2 text-sm border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary w-36 md:max-w-xs"
               placeholder="Имя файла"
             />
             {/* Custom font-size: type any px value and apply to the selection */}
@@ -422,26 +422,26 @@ export default function QuillEditor({ isOpen, onClose }: QuillEditorProps) {
               </button>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2 md:gap-3">
             <DocThemeSwitcher value={previewTheme} onChange={changeTheme} />
             <button
               onClick={() => setShowGallery(!showGallery)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors font-medium ${showGallery
+              className={`flex items-center gap-2 px-3 md:px-4 py-2 rounded-lg transition-colors font-medium ${showGallery
                 ? 'bg-primary text-primary-foreground'
                 : 'bg-accent hover:bg-accent/80'
                 }`}
               title="Галерея файлов"
             >
               <ImagePlus className="w-5 h-5" />
-              Галерея
+              <span className="hidden sm:inline">Галерея</span>
             </button>
             <button
               onClick={handleUploadDelta}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+              className="flex items-center gap-2 px-3 md:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
               title="Загрузить Quill JSON"
             >
               <Upload className="w-5 h-5" />
-              Загрузить JSON
+              <span className="hidden sm:inline">Загрузить JSON</span>
             </button>
             <input
               ref={fileInputRef}
@@ -452,28 +452,29 @@ export default function QuillEditor({ isOpen, onClose }: QuillEditorProps) {
             />
             <button
               onClick={handleDownloadDelta}
-              className="flex items-center gap-2 px-4 py-2 bg-accent rounded-lg hover:bg-accent/80 transition-colors font-medium"
+              className="flex items-center gap-2 px-3 md:px-4 py-2 bg-accent rounded-lg hover:bg-accent/80 transition-colors font-medium text-sm"
               title="Скачать как Quill Delta (.json)"
             >
               Quill JSON
             </button>
             <button
               onClick={handleDownloadHTML}
-              className="flex items-center gap-2 px-4 py-2 bg-accent rounded-lg hover:bg-accent/80 transition-colors font-medium"
+              className="flex items-center gap-2 px-3 md:px-4 py-2 bg-accent rounded-lg hover:bg-accent/80 transition-colors font-medium text-sm"
               title="Скачать как HTML"
             >
               HTML
             </button>
             <button
               onClick={handleDownload}
-              className="flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium"
+              className="flex items-center gap-2 px-3 md:px-5 py-2 md:py-2.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium"
+              title="Скачать как Markdown (.md)"
             >
               <Download className="w-5 h-5" />
-              Скачать MD
+              <span className="hidden sm:inline">Скачать MD</span>
             </button>
             <button
               onClick={handleClose}
-              className="p-2 hover:bg-accent rounded-lg transition-colors"
+              className="p-2 hover:bg-accent rounded-lg transition-colors ml-auto md:ml-0"
               title="Закрыть"
             >
               <X className="w-6 h-6" />
@@ -482,16 +483,16 @@ export default function QuillEditor({ isOpen, onClose }: QuillEditorProps) {
         </div>
 
         {/* Main content area with editor and gallery */}
-        <div className="flex-1 overflow-hidden flex">
+        <div className="flex-1 overflow-hidden flex flex-col md:flex-row">
           {/* Редактор Quill */}
           <div className="flex-1 overflow-hidden flex flex-col quill-fullscreen" style={docStyle}>
             <div ref={toolbarRef} className="ql-toolbar ql-snow"></div>
             <div ref={editorHostRef} className="ql-container ql-snow" style={{ flex: 1 }}></div>
           </div>
 
-          {/* File Gallery Sidebar */}
+          {/* File Gallery Sidebar — full width on mobile, fixed sidebar on desktop */}
           {showGallery && (
-            <div className="w-96 border-l bg-background flex flex-col">
+            <div className="w-full md:w-96 h-1/2 md:h-auto border-t md:border-t-0 md:border-l bg-background flex flex-col shrink-0">
               <FileGallery lang="ru" onSelectFile={handleSelectFile} />
             </div>
           )}

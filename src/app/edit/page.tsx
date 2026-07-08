@@ -319,14 +319,14 @@ export default function PublicEditorPage() {
     <div className="fixed inset-0 bg-background flex flex-col">
       <div className="w-full h-full bg-background flex flex-col">
         {/* Верхняя панель */}
-        <div className="border-b bg-background px-6 py-4 flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-4 flex-1">
-            <h2 className="text-2xl font-bold">Создать документ</h2>
+        <div className="border-b bg-background px-3 md:px-6 py-3 md:py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3 shrink-0">
+          <div className="flex flex-wrap items-center gap-2 md:gap-4 min-w-0">
+            <h2 className="text-lg md:text-2xl font-bold">Создать документ</h2>
             <input
               type="text"
               value={fileName}
               onChange={(e) => setFileName(e.target.value)}
-              className="px-3 py-2 text-sm border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary max-w-xs"
+              className="px-3 py-2 text-sm border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary w-36 md:max-w-xs"
               placeholder="Имя файла"
             />
             {/* Custom font-size: type any px value and apply to the selection */}
@@ -350,15 +350,15 @@ export default function PublicEditorPage() {
               </button>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2 md:gap-3">
             <DocThemeSwitcher value={previewTheme} onChange={changeTheme} />
             <button
               onClick={handleUploadJSON}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+              className="flex items-center gap-2 px-3 md:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
               title="Загрузить JSON"
             >
               <Upload className="w-5 h-5" />
-              Загрузить JSON
+              <span className="hidden sm:inline">Загрузить JSON</span>
             </button>
             <input
               ref={fileInputRef}
@@ -369,19 +369,19 @@ export default function PublicEditorPage() {
             />
             <button
               onClick={handleDownloadDelta}
-              className="flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium"
+              className="flex items-center gap-2 px-3 md:px-5 py-2 md:py-2.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium"
               title="Скачать как JSON"
             >
               <Download className="w-5 h-5" />
-              Скачать JSON
+              <span className="hidden sm:inline">Скачать JSON</span>
             </button>
             <button
               onClick={handleClose}
-              className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
+              className="flex items-center gap-2 px-3 md:px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
               title="Вернуться на главную"
             >
               <Home className="w-5 h-5" />
-              На главную
+              <span className="hidden sm:inline">На главную</span>
             </button>
           </div>
         </div>
