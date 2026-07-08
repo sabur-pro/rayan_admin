@@ -13,8 +13,8 @@ import { getCourses } from '@/lib/course';
 import { getSemesters } from '@/lib/semester';
 import {
   listCampaigns, createCampaign, updateCampaign, deleteCampaign,
-  sendCampaignNow, cancelCampaign, previewAudience, PUSH_LANGS,
-  type Campaign, type CampaignAudience, type CampaignSchedule,
+  sendCampaignNow, cancelCampaign, previewAudience, getPushStats, PUSH_LANGS,
+  type Campaign, type CampaignAudience, type CampaignSchedule, type PushStats,
   type PushTranslation, type AudienceType, type SubscriptionSeg, type ScheduleType,
 } from '@/lib/notifications';
 import type { UniversityTranslation } from '../../../../types/university';
@@ -101,6 +101,7 @@ export default function NotificationsPage() {
 
   const [preview, setPreview] = useState<{ recipient_count: number; device_count: number } | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
+  const [stats, setStats] = useState<PushStats | null>(null);
 
   const loadCampaigns = useCallback(async () => {
     setLoading(true);
@@ -115,24 +116,28 @@ export default function NotificationsPage() {
     }
   }, []);
 
-  useEffect(() => { loadCampaigns(); }, [loadCampaigns]);
+  const loadStats = useCallback(async () => {
+    try {
+      setStats(await getPushStats());
+    } catch (e) {
+      console.error('Не удалось загрузить статистику', e);
+    }
+  }, []);
 
-  // Справочники (один раз).
+  useEffect(() => { loadCampaigns(); loadStats(); }, [loadCampaigns, loadStats]);
+
+  // Справочники (один раз). Загружаем независимо, чтобы сбой одного запроса
+  // не оставлял пустыми остальные списки.
   useEffect(() => {
-    (async () => {
-      try {
-        const [u, c, s] = await Promise.all([
-          api.getUniversityTranslations(LANG_FETCH, 1, 200),
-          getCourses(LANG_FETCH, 1, 200),
-          getSemesters(1, 200),
-        ]);
-        setUniversities(u.data || []);
-        setCourses(c.data || []);
-        setSemesters(s.data || []);
-      } catch (e) {
-        console.error('Не удалось загрузить справочники', e);
-      }
-    })();
+    api.getUniversityTranslations(LANG_FETCH, 1, 200)
+      .then((u) => setUniversities(u.data || []))
+      .catch((e) => console.error('universities load failed', e));
+    getCourses(LANG_FETCH, 1, 200)
+      .then((c) => setCourses(c.data || []))
+      .catch((e) => console.error('courses load failed', e));
+    getSemesters(1, 200)
+      .then((s) => setSemesters(s.data || []))
+      .catch((e) => console.error('semesters load failed', e));
   }, []);
 
   // Факультеты — при выборе университета.
@@ -300,10 +305,32 @@ export default function NotificationsPage() {
           <h1 className="text-2xl font-semibold">Уведомления</h1>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={loadCampaigns}><RefreshCw className="h-4 w-4 mr-2" />Обновить</Button>
+          <Button variant="outline" onClick={() => { loadCampaigns(); loadStats(); }}><RefreshCw className="h-4 w-4 mr-2" />Обновить</Button>
           <Button onClick={openCreate}><Plus className="h-4 w-4 mr-2" />Создать рассылку</Button>
         </div>
       </div>
+
+      {/* Статистика устройств */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {[
+          { label: 'Устройств с токеном', value: stats?.total_devices ?? '—', icon: <Users2 className="h-4 w-4" /> },
+          { label: 'Пользователей', value: stats?.users_with_device ?? '—', icon: <Users2 className="h-4 w-4" /> },
+          { label: 'Android', value: stats?.android_devices ?? '—', icon: <Bell className="h-4 w-4" /> },
+          { label: 'iOS', value: stats?.ios_devices ?? '—', icon: <Bell className="h-4 w-4" /> },
+        ].map((s) => (
+          <Card key={s.label}>
+            <CardContent className="p-4">
+              <div className="text-xs text-muted-foreground flex items-center gap-1">{s.icon}{s.label}</div>
+              <div className="text-2xl font-semibold mt-1">{s.value}</div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+      {stats && stats.total_devices === 0 && (
+        <div className="text-sm rounded-md border border-amber-500/40 bg-amber-500/10 text-amber-600 px-3 py-2">
+          Ни одного устройства не зарегистрировано. Push-токены с приложения ещё не приходили — проверьте настройку FCM (Android) / APNs (iOS) и что приложение вызывает регистрацию токена после входа.
+        </div>
+      )}
 
       {showForm && (
         <Card>

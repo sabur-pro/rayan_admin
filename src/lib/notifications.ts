@@ -89,6 +89,13 @@ export interface AudiencePreview {
   device_count: number;
 }
 
+export interface PushStats {
+  total_devices: number;
+  android_devices: number;
+  ios_devices: number;
+  users_with_device: number;
+}
+
 export interface Paginated<T> {
   data: T[];
   page: number;
@@ -171,6 +178,14 @@ export async function cancelCampaign(id: number): Promise<Campaign> {
     headers: { 'Content-Type': 'application/json' },
   });
   return handle(resp, 'Не удалось отменить рассылку');
+}
+
+export async function getPushStats(): Promise<PushStats> {
+  const resp = await fetchWithAuth(`${API_BASE_URL}/push/stats`, {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' },
+  });
+  return handle(resp, 'Не удалось загрузить статистику');
 }
 
 export async function previewAudience(audience: CampaignAudience): Promise<AudiencePreview> {
