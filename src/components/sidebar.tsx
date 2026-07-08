@@ -12,7 +12,8 @@ import {
   Sun,
   Moon,
   Home,
-  ShoppingBag
+  ShoppingBag,
+  Bell
 } from 'lucide-react';
 import { removeAuthCookies } from '@/lib/cookies';
 import { authApi } from '@/lib/api-client';
@@ -46,6 +47,11 @@ const adminNavigation = [
     name: 'Магазин',
     href: '/dashboard/market',
     icon: ShoppingBag,
+  },
+  {
+    name: 'Уведомления',
+    href: '/dashboard/notifications',
+    icon: Bell,
   },
 ];
 
