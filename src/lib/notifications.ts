@@ -2,7 +2,7 @@
 // API-клиент раздела «Уведомления» (push-рассылки).
 import { API_BASE_URL, fetchWithAuth } from '@/lib/http';
 
-export type AudienceType = 'all' | 'users';
+export type AudienceType = 'all' | 'users' | 'specific';
 export type SubscriptionSeg = 'all' | 'active' | 'inactive';
 export type ScheduleType = 'now' | 'scheduled' | 'recurring';
 export type CampaignStatus =
@@ -17,6 +17,7 @@ export interface PushTranslation {
   lang_code: string;
   title: string;
   body: string;
+  content?: string; // rich HTML (links, images) для ленты в приложении
 }
 
 export interface CampaignAudience {
@@ -25,6 +26,7 @@ export interface CampaignAudience {
   faculty_id?: number | null;
   course_id?: number | null;
   semester_id?: number | null;
+  user_ids?: number[]; // для audience_type = specific
   subscription_seg?: SubscriptionSeg;
 }
 
@@ -42,6 +44,7 @@ export interface Campaign {
   faculty_id: number | null;
   course_id: number | null;
   semester_id: number | null;
+  user_ids: number[] | null;
   subscription_seg: SubscriptionSeg;
   schedule_type: ScheduleType;
   scheduled_at: string | null;
@@ -50,6 +53,7 @@ export interface Campaign {
   next_run_at: string | null;
   active: boolean;
   data: string;
+  image_url: string;
   status: CampaignStatus;
   last_run_at: string | null;
   total_sent: number;
@@ -73,6 +77,7 @@ export interface CreateCampaignPayload {
   audience: CampaignAudience;
   schedule: CampaignSchedule;
   data?: string;
+  image_url?: string;
   translations: PushTranslation[];
 }
 

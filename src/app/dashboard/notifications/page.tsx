@@ -6,11 +6,13 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
-  Bell, Plus, Send, Users2, Ban, Trash2, Loader2, Clock, Repeat, Zap, RefreshCw,
+  Bell, Plus, Send, Users2, Ban, Trash2, Loader2, Clock, Repeat, Zap, RefreshCw, Search, X, UserPlus,
 } from 'lucide-react';
 import { api } from '@/lib/api-client';
 import { getCourses } from '@/lib/course';
 import { getSemesters } from '@/lib/semester';
+import { getUsers } from '@/lib/user';
+import RichEditor from '@/components/RichEditor';
 import {
   listCampaigns, createCampaign, updateCampaign, deleteCampaign,
   sendCampaignNow, cancelCampaign, previewAudience, getPushStats, PUSH_LANGS,
@@ -42,18 +44,22 @@ const LANG_FETCH = 'ru';
 
 function emptyTranslations(): Record<string, PushTranslation> {
   const m: Record<string, PushTranslation> = {};
-  for (const l of PUSH_LANGS) m[l.code] = { lang_code: l.code, title: '', body: '' };
+  for (const l of PUSH_LANGS) m[l.code] = { lang_code: l.code, title: '', body: '', content: '' };
   return m;
 }
+
+type SelectedUser = { id: number; login: string; phone: string };
 
 type FormState = {
   id?: number;
   translations: Record<string, PushTranslation>;
+  activeLang: string;
   audienceType: AudienceType;
   universityId: number;
   facultyId: number;
   courseId: number;
   semesterId: number;
+  selectedUsers: SelectedUser[];
   subscriptionSeg: SubscriptionSeg;
   scheduleType: ScheduleType;
   scheduledAt: string; // datetime-local value
@@ -65,11 +71,13 @@ type FormState = {
 function newForm(): FormState {
   return {
     translations: emptyTranslations(),
+    activeLang: 'ru',
     audienceType: 'all',
     universityId: 0,
     facultyId: 0,
     courseId: 0,
     semesterId: 0,
+    selectedUsers: [],
     subscriptionSeg: 'all',
     scheduleType: 'now',
     scheduledAt: '',
@@ -103,6 +111,11 @@ export default function NotificationsPage() {
   const [previewLoading, setPreviewLoading] = useState(false);
   const [stats, setStats] = useState<PushStats | null>(null);
 
+  // Поиск пользователей (для точечной рассылки).
+  const [userQuery, setUserQuery] = useState('');
+  const [userResults, setUserResults] = useState<SelectedUser[]>([]);
+  const [userSearching, setUserSearching] = useState(false);
+
   const loadCampaigns = useCallback(async () => {
     setLoading(true);
     try {
@@ -129,13 +142,13 @@ export default function NotificationsPage() {
   // Справочники (один раз). Загружаем независимо, чтобы сбой одного запроса
   // не оставлял пустыми остальные списки.
   useEffect(() => {
-    api.getUniversityTranslations(LANG_FETCH, 1, 200)
+    api.getUniversityTranslations(LANG_FETCH, 1, 100)
       .then((u) => setUniversities(u.data || []))
       .catch((e) => console.error('universities load failed', e));
-    getCourses(LANG_FETCH, 1, 200)
+    getCourses(LANG_FETCH, 1, 100)
       .then((c) => setCourses(c.data || []))
       .catch((e) => console.error('courses load failed', e));
-    getSemesters(1, 200)
+    getSemesters(1, 100)
       .then((s) => setSemesters(s.data || []))
       .catch((e) => console.error('semesters load failed', e));
   }, []);
@@ -149,7 +162,7 @@ export default function NotificationsPage() {
     let cancelled = false;
     (async () => {
       try {
-        const res = await api.getFaculties(form.universityId, LANG_FETCH, 1, 200);
+        const res = await api.getFaculties(form.universityId, LANG_FETCH, 1, 100);
         if (!cancelled) setFaculties(res.data || []);
       } catch (e) {
         console.error(e);
@@ -161,12 +174,13 @@ export default function NotificationsPage() {
   // Оценка охвата (дебаунс).
   const audiencePayload: CampaignAudience = useMemo(() => ({
     audience_type: form.audienceType,
-    subscription_seg: form.subscriptionSeg,
+    subscription_seg: form.audienceType === 'specific' ? 'all' : form.subscriptionSeg,
     university_id: form.audienceType === 'users' && form.universityId > 0 ? form.universityId : null,
     faculty_id: form.audienceType === 'users' && form.facultyId > 0 ? form.facultyId : null,
     course_id: form.audienceType === 'users' && form.courseId > 0 ? form.courseId : null,
     semester_id: form.audienceType === 'users' && form.semesterId > 0 ? form.semesterId : null,
-  }), [form.audienceType, form.subscriptionSeg, form.universityId, form.facultyId, form.courseId, form.semesterId]);
+    user_ids: form.audienceType === 'specific' ? form.selectedUsers.map((u) => u.id) : undefined,
+  }), [form.audienceType, form.subscriptionSeg, form.universityId, form.facultyId, form.courseId, form.semesterId, form.selectedUsers]);
 
   useEffect(() => {
     if (!showForm) return;
@@ -186,6 +200,36 @@ export default function NotificationsPage() {
     return () => { cancelled = true; clearTimeout(t); };
   }, [audiencePayload, showForm]);
 
+  // Поиск пользователей по логину (дебаунс).
+  useEffect(() => {
+    if (form.audienceType !== 'specific') return;
+    const q = userQuery.trim();
+    if (q === '') { setUserResults([]); return; }
+    let cancelled = false;
+    setUserSearching(true);
+    const t = setTimeout(async () => {
+      try {
+        const res = await getUsers({ page: 1, limit: 20, role: 'user', login: q });
+        if (!cancelled) {
+          setUserResults((res.data || []).map((u) => ({ id: u.id, login: u.login, phone: u.phone })));
+        }
+      } catch (e) {
+        console.error('user search failed', e);
+        if (!cancelled) setUserResults([]);
+      } finally {
+        if (!cancelled) setUserSearching(false);
+      }
+    }, 350);
+    return () => { cancelled = true; clearTimeout(t); };
+  }, [userQuery, form.audienceType]);
+
+  function addUser(u: SelectedUser) {
+    setForm((f) => f.selectedUsers.some((x) => x.id === u.id) ? f : { ...f, selectedUsers: [...f.selectedUsers, u] });
+  }
+  function removeUser(id: number) {
+    setForm((f) => ({ ...f, selectedUsers: f.selectedUsers.filter((x) => x.id !== id) }));
+  }
+
   function openCreate() {
     setForm(newForm());
     setShowForm(true);
@@ -193,15 +237,17 @@ export default function NotificationsPage() {
 
   function openEdit(c: Campaign) {
     const tr = emptyTranslations();
-    for (const t of c.translations) tr[t.lang_code] = { lang_code: t.lang_code, title: t.title, body: t.body };
+    for (const t of c.translations) tr[t.lang_code] = { lang_code: t.lang_code, title: t.title, body: t.body, content: t.content || '' };
     setForm({
       id: c.id,
       translations: tr,
+      activeLang: 'ru',
       audienceType: c.audience_type,
       universityId: c.university_id ?? 0,
       facultyId: c.faculty_id ?? 0,
       courseId: c.course_id ?? 0,
       semesterId: c.semester_id ?? 0,
+      selectedUsers: [], // список конкретных юзеров при редактировании подгружать не будем — задаётся заново
       subscriptionSeg: c.subscription_seg,
       scheduleType: c.schedule_type,
       scheduledAt: c.scheduled_at ? toLocalInput(c.scheduled_at) : '',
@@ -212,7 +258,7 @@ export default function NotificationsPage() {
     setShowForm(true);
   }
 
-  function setTr(code: string, field: 'title' | 'body', value: string) {
+  function setTr(code: string, field: 'title' | 'body' | 'content', value: string) {
     setForm((f) => ({
       ...f,
       translations: { ...f.translations, [code]: { ...f.translations[code], [field]: value } },
@@ -222,7 +268,12 @@ export default function NotificationsPage() {
   function buildPayload() {
     const translations: PushTranslation[] = Object.values(form.translations)
       .filter((t) => t.title.trim() !== '' && t.body.trim() !== '')
-      .map((t) => ({ lang_code: t.lang_code, title: t.title.trim(), body: t.body.trim() }));
+      .map((t) => ({
+        lang_code: t.lang_code,
+        title: t.title.trim(),
+        body: t.body.trim(),
+        content: (t.content || '').trim(),
+      }));
 
     const schedule: CampaignSchedule = {
       schedule_type: form.scheduleType,
@@ -247,6 +298,10 @@ export default function NotificationsPage() {
     const payload = buildPayload();
     if (payload.translations.length === 0) {
       alert('Заполните заголовок и текст хотя бы для одного языка.');
+      return;
+    }
+    if (form.audienceType === 'specific' && form.selectedUsers.length === 0) {
+      alert('Выберите хотя бы одного пользователя.');
       return;
     }
     if (payload.schedule.schedule_type === 'scheduled' && !payload.schedule.scheduled_at) {
@@ -337,27 +392,50 @@ export default function NotificationsPage() {
           <CardContent className="p-6 space-y-6">
             <h2 className="text-lg font-semibold">{form.id ? 'Редактировать рассылку' : 'Новая рассылка'}</h2>
 
-            {/* Тексты по языкам */}
+            {/* Тексты по языкам (табы) */}
             <div className="space-y-3">
               <div className="text-sm font-medium text-muted-foreground">Текст уведомления (по языкам, ru — обязателен)</div>
-              {PUSH_LANGS.map((l) => (
-                <div key={l.code} className="grid grid-cols-1 md:grid-cols-[110px_1fr] gap-2 items-start">
-                  <div className="text-sm pt-2 font-medium">{l.label}<span className="text-muted-foreground"> ({l.code})</span></div>
+              <div className="flex flex-wrap gap-1">
+                {PUSH_LANGS.map((l) => {
+                  const filled = (form.translations[l.code]?.title || '').trim() !== '';
+                  return (
+                    <button key={l.code} type="button"
+                      className={`text-xs px-3 py-1.5 rounded-md border ${form.activeLang === l.code ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'}`}
+                      onClick={() => setForm((f) => ({ ...f, activeLang: l.code }))}>
+                      {l.label}{filled ? ' ✓' : ''}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {(() => {
+                const code = form.activeLang;
+                return (
                   <div className="space-y-2">
                     <Input
-                      placeholder="Заголовок"
-                      value={form.translations[l.code]?.title || ''}
-                      onChange={(e) => setTr(l.code, 'title', e.target.value)}
+                      placeholder="Заголовок (показывается в системном пуше)"
+                      value={form.translations[code]?.title || ''}
+                      onChange={(e) => setTr(code, 'title', e.target.value)}
                     />
                     <textarea
-                      className="w-full px-3 py-2 rounded-md border bg-transparent min-h-[64px]"
-                      placeholder="Текст сообщения"
-                      value={form.translations[l.code]?.body || ''}
-                      onChange={(e) => setTr(l.code, 'body', e.target.value)}
+                      className="w-full px-3 py-2 rounded-md border bg-transparent min-h-[56px]"
+                      placeholder="Короткий текст пуша (обязательно)"
+                      value={form.translations[code]?.body || ''}
+                      onChange={(e) => setTr(code, 'body', e.target.value)}
+                    />
+                    <div className="text-xs text-muted-foreground">
+                      Описание (для ленты в приложении) — ссылки, форматирование, картинки:
+                    </div>
+                    <RichEditor
+                      key={`${form.id ?? 'new'}-${code}`}
+                      lang={code}
+                      value={form.translations[code]?.content || ''}
+                      onChange={(html) => setTr(code, 'content', html)}
+                      placeholder="Полное сообщение (необязательно). Картинки загружаются в галерею."
                     />
                   </div>
-                </div>
-              ))}
+                );
+              })()}
             </div>
 
             {/* Аудитория */}
@@ -372,7 +450,44 @@ export default function NotificationsPage() {
                   onClick={() => setForm((f) => ({ ...f, audienceType: 'users' }))}>
                   По фильтру
                 </Button>
+                <Button type="button" variant={form.audienceType === 'specific' ? 'default' : 'outline'} size="sm"
+                  onClick={() => setForm((f) => ({ ...f, audienceType: 'specific' }))}>
+                  <UserPlus className="h-4 w-4 mr-2" />Выбрать пользователей
+                </Button>
               </div>
+
+              {form.audienceType === 'specific' && (
+                <div className="space-y-2">
+                  <div className="relative">
+                    <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                    <Input className="pl-9" placeholder="Поиск по логину…"
+                      value={userQuery} onChange={(e) => setUserQuery(e.target.value)} />
+                    {userSearching && <Loader2 className="h-4 w-4 animate-spin absolute right-3 top-1/2 -translate-y-1/2" />}
+                  </div>
+                  {userResults.length > 0 && (
+                    <div className="border rounded-md max-h-48 overflow-auto divide-y">
+                      {userResults.map((u) => (
+                        <button key={u.id} type="button"
+                          className="w-full text-left px-3 py-2 hover:bg-accent flex justify-between items-center"
+                          onClick={() => addUser(u)}>
+                          <span>{u.login}</span>
+                          <span className="text-xs text-muted-foreground">{u.phone}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {form.selectedUsers.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {form.selectedUsers.map((u) => (
+                        <span key={u.id} className="inline-flex items-center gap-1 text-sm bg-primary/10 text-primary rounded-full px-3 py-1">
+                          {u.login}
+                          <button type="button" onClick={() => removeUser(u.id)}><X className="h-3 w-3" /></button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
 
               {form.audienceType === 'users' && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -419,15 +534,17 @@ export default function NotificationsPage() {
                 </div>
               )}
 
-              <div className="max-w-xs">
-                <label className="text-sm">Подписка</label>
-                <select className={selectCls} value={form.subscriptionSeg}
-                  onChange={(e) => setForm((f) => ({ ...f, subscriptionSeg: e.target.value as SubscriptionSeg }))}>
-                  <option value="all">Все</option>
-                  <option value="active">Только с активной подпиской</option>
-                  <option value="inactive">Только без активной подписки</option>
-                </select>
-              </div>
+              {form.audienceType !== 'specific' && (
+                <div className="max-w-xs">
+                  <label className="text-sm">Подписка</label>
+                  <select className={selectCls} value={form.subscriptionSeg}
+                    onChange={(e) => setForm((f) => ({ ...f, subscriptionSeg: e.target.value as SubscriptionSeg }))}>
+                    <option value="all">Все</option>
+                    <option value="active">Только с активной подпиской</option>
+                    <option value="inactive">Только без активной подписки</option>
+                  </select>
+                </div>
+              )}
 
               <div className="text-sm text-muted-foreground flex items-center gap-2">
                 {previewLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Users2 className="h-4 w-4" />}
@@ -533,7 +650,7 @@ export default function NotificationsPage() {
                         )}
                       </div>
                       <div className="text-sm text-muted-foreground mt-1">
-                        Аудитория: {c.audience_type === 'all' ? 'все' : 'по фильтру'}
+                        Аудитория: {c.audience_type === 'all' ? 'все' : c.audience_type === 'specific' ? 'выбранные' : 'по фильтру'}
                         {' · '}подписка: {c.subscription_seg}
                         {' · '}отправлено: {c.total_sent}{c.total_failed ? ` (ошибок ${c.total_failed})` : ''}
                       </div>
