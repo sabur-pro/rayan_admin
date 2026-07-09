@@ -8,12 +8,71 @@ import CreateDegreeModal from '@/components/CreateDegreeModal';
 import EditDegreeTranslationModal from '@/components/EditDegreeTranslationModal';
 import SemesterList from '@/components/SemesterList';
 import CourseList from '@/components/CourseList';
+import { getAcademicProgressURL, updateAcademicProgressURL } from '@/lib/setting';
 
 type FetchState =
   | { status: 'idle' }
   | { status: 'loading' }
   | { status: 'success'; data: DegreeItem[] }
   | { status: 'error'; error: string };
+
+function AcademicProgressUrlCard(): JSX.Element {
+  const [url, setUrl] = useState<string>('');
+  const [loading, setLoading] = useState<boolean>(true);
+  const [saving, setSaving] = useState<boolean>(false);
+  const [saved, setSaved] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    getAcademicProgressURL()
+      .then((u) => setUrl(u))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  async function handleSave() {
+    try {
+      setSaving(true);
+      setError(null);
+      await updateAcademicProgressURL(url.trim());
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <section className="mb-8 rounded-xl glass p-5 border shadow-sm">
+      <h2 className="text-lg font-semibold">Ссылка на сайт успеваемости</h2>
+      <p className="text-sm text-muted-foreground mt-1">
+        Эта ссылка открывается у студента в приложении в разделе «Успеваемость». Оставьте пустым, чтобы скрыть раздел.
+      </p>
+      <div className="mt-4 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+        <input
+          type="url"
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          disabled={loading || saving}
+          placeholder="https://study.tj"
+          className="flex-1 px-3 py-2 rounded-lg border bg-background text-sm outline-none focus:ring-2 focus:ring-primary/40"
+        />
+        <button
+          onClick={handleSave}
+          disabled={loading || saving}
+          className="btn-primary px-4 py-2 rounded-lg shadow-md disabled:opacity-60"
+        >
+          {saving ? 'Сохранение…' : saved ? '✓ Сохранено' : 'Сохранить'}
+        </button>
+      </div>
+      {error && (
+        <div className="mt-3 text-sm text-red-600 dark:text-red-400">Ошибка: {error}</div>
+      )}
+    </section>
+  );
+}
 
 export default function Page(): JSX.Element {
   const [state, setState] = useState<FetchState>({ status: 'idle' });
@@ -97,6 +156,8 @@ export default function Page(): JSX.Element {
           </button>
         </div>
       </header>
+
+      <AcademicProgressUrlCard />
 
       {state.status === 'loading' && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
