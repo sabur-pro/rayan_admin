@@ -99,6 +99,17 @@ export async function getSubscriptionStats(): Promise<SubscriptionStats> {
   return response.json();
 }
 
+export async function resetUserSessions(userId: number): Promise<void> {
+  const url = `${API_BASE_URL}/user/${userId}/reset-sessions`;
+
+  const response = await fetchWithAuth(url, { method: 'POST' });
+
+  if (!response.ok) {
+    const text = await response.text().catch(() => '');
+    throw new Error(`Failed to reset user sessions: ${response.status} ${text}`);
+  }
+}
+
 export async function updateSubscriptionStatus(
   subscriptionId: number,
   status: 'accepted' | 'denied'

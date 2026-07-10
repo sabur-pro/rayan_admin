@@ -3,8 +3,8 @@
 
 import React, { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Users, Search, GraduationCap, Building2, BookOpen, Calendar, CreditCard, Check, X, Loader2, MessageSquare, Star } from 'lucide-react';
-import { getUsers, getSubscriptions, updateSubscriptionStatus, getSubscriptionStats } from '@/lib/user';
+import { Users, Search, GraduationCap, Building2, BookOpen, Calendar, CreditCard, Check, X, Loader2, MessageSquare, Star, LogOut } from 'lucide-react';
+import { getUsers, getSubscriptions, updateSubscriptionStatus, getSubscriptionStats, resetUserSessions } from '@/lib/user';
 import { api } from '@/lib/api-client';
 import { getCourses } from '@/lib/course';
 import { getSemesters } from '@/lib/semester';
@@ -61,6 +61,7 @@ export default function UsersPage() {
   const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [resettingUserIds, setResettingUserIds] = useState<Set<number>>(new Set());
 
   // Табы
   const [activeTab, setActiveTab] = useState<'users' | 'subscriptions' | 'reviews'>('users');
@@ -132,6 +133,29 @@ export default function UsersPage() {
     if (minutes > 0 && days === 0) parts.push(`${minutes} ${minutes === 1 ? 'минута' : minutes < 5 ? 'минуты' : 'минут'}`);
 
     return { text: parts.length > 0 ? parts.join(' ') : 'Менее минуты', isExpired: false };
+  };
+
+  // Обработчик сброса сессий пользователя
+  const handleResetSessions = async (user: User) => {
+    const confirmed = window.confirm(
+      `Очистить сессии пользователя «${user.login}»?\n\nВсе устройства, на которых он сейчас авторизован, потеряют доступ к аккаунту, и он сможет войти заново на новом устройстве.`
+    );
+    if (!confirmed) return;
+
+    setResettingUserIds((prev) => new Set(prev).add(user.id));
+    try {
+      await resetUserSessions(user.id);
+      alert(`Сессии пользователя «${user.login}» очищены`);
+    } catch (err) {
+      console.error('Failed to reset user sessions:', err);
+      alert('Ошибка при очистке сессий: ' + (err as Error).message);
+    } finally {
+      setResettingUserIds((prev) => {
+        const next = new Set(prev);
+        next.delete(user.id);
+        return next;
+      });
+    }
   };
 
   // Обработчик изменения статуса подписки
@@ -587,12 +611,13 @@ export default function UsersPage() {
                       <th className="px-4 py-3 text-left text-sm font-medium">Факультет</th>
                       <th className="px-4 py-3 text-left text-sm font-medium">Телефон</th>
                       <th className="px-4 py-3 text-left text-sm font-medium">Создан</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium">Сессии</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y">
-                    {loading && <tr><td colSpan={10} className="px-4 py-8 text-center text-muted-foreground">Загрузка...</td></tr>}
-                    {!loading && error && <tr><td colSpan={10} className="px-4 py-8 text-center text-destructive">{error}</td></tr>}
-                    {!loading && !error && users.length === 0 && <tr><td colSpan={10} className="px-4 py-8 text-center text-muted-foreground">Пользователи не найдены</td></tr>}
+                    {loading && <tr><td colSpan={11} className="px-4 py-8 text-center text-muted-foreground">Загрузка...</td></tr>}
+                    {!loading && error && <tr><td colSpan={11} className="px-4 py-8 text-center text-destructive">{error}</td></tr>}
+                    {!loading && !error && users.length === 0 && <tr><td colSpan={11} className="px-4 py-8 text-center text-muted-foreground">Пользователи не найдены</td></tr>}
                     {!loading && !error && users.map((user) => (
                       <tr key={user.id} className="hover:bg-muted/30 transition-colors">
                         <td className="px-4 py-3 text-sm">{user.id}</td>
@@ -609,6 +634,17 @@ export default function UsersPage() {
                         <td className="px-4 py-3 text-sm">{user.faculty_id}</td>
                         <td className="px-4 py-3 text-sm">{user.phone || '-'}</td>
                         <td className="px-4 py-3 text-sm text-muted-foreground">{new Date(user.created_at).toLocaleDateString('ru-RU')}</td>
+                        <td className="px-4 py-3 text-sm">
+                          <button
+                            onClick={() => handleResetSessions(user)}
+                            disabled={resettingUserIds.has(user.id)}
+                            title="Очистить сессии — пользователь сможет войти с нового устройства, старые устройства потеряют доступ"
+                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-red-500 hover:bg-red-600 text-white rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                          >
+                            {resettingUserIds.has(user.id) ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <LogOut className="h-3.5 w-3.5" />}
+                            Очистить
+                          </button>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
