@@ -288,7 +288,12 @@ export default function QuillEditor({ isOpen, onClose, material }: QuillEditorPr
           // Editing an existing book: pull the stored document in rather than
           // starting from the "new document" placeholder.
           try {
-            const response = await fetch(material.docPath);
+            // Uploaded files are served behind auth, so the document has to be
+            // requested with the admin's token like every other API call.
+            const response = await fetchWithAuth(material.docPath, { method: 'GET' });
+            if (!response.ok) {
+              throw new Error(`${response.status} ${await response.text().catch(() => '')}`);
+            }
             const raw = await response.text();
             if (!isMounted) return;
 
@@ -307,7 +312,9 @@ export default function QuillEditor({ isOpen, onClose, material }: QuillEditorPr
           } catch (err) {
             console.error('Не удалось загрузить документ материала:', err);
             if (isMounted) {
-              setSaveError('Не удалось загрузить документ материала');
+              setSaveError(
+                `Не удалось загрузить документ материала: ${err instanceof Error ? err.message : ''}`
+              );
             }
           }
         } else {
