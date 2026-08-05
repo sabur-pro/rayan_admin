@@ -99,7 +99,17 @@ export default function QuillEditor({ isOpen, onClose, material }: QuillEditorPr
     };
   }, [isOpen]);
 
-  // Quill editor initialization
+  // Quill editor initialization.
+  //
+  // Depends on the material's *fields*, not the object: callers build the
+  // material inline from query params, so a new object identity arrives on
+  // every render. Depending on the object tore the editor down and rebuilt it
+  // after each setState — including the ones this effect itself triggers on
+  // load — so the document never survived long enough to appear.
+  const materialId = material?.materialId;
+  const materialLangCode = material?.langCode;
+  const materialDocPath = material?.docPath;
+
   useEffect(() => {
     if (!isOpen) return;
     let isMounted = true;
@@ -195,6 +205,11 @@ export default function QuillEditor({ isOpen, onClose, material }: QuillEditorPr
           return delta;
         };
 
+        // Quill mounts its editor *inside* the host. If this effect re-runs for
+        // a real reason (a different document), the previous editor is still in
+        // the DOM and a second instance would nest inside it — so start clean.
+        editorHostRef.current.innerHTML = '';
+
         const q = new Quill(editorHostRef.current, {
           theme: 'snow',
           placeholder: 'Начните печатать...',
@@ -284,20 +299,20 @@ export default function QuillEditor({ isOpen, onClose, material }: QuillEditorPr
 
         quillRef.current = q as QuillInstance;
 
-        if (material) {
+        if (materialDocPath) {
           // Editing an existing book: pull the stored document in rather than
           // starting from the "new document" placeholder.
           try {
             // Uploaded files are served behind auth, so the document has to be
             // requested with the admin's token like every other API call.
-            const response = await fetchWithAuth(material.docPath, { method: 'GET' });
+            const response = await fetchWithAuth(materialDocPath, { method: 'GET' });
             if (!response.ok) {
               throw new Error(`${response.status} ${await response.text().catch(() => '')}`);
             }
             const raw = await response.text();
             if (!isMounted) return;
 
-            if (/\.md(\?|$)/i.test(material.docPath)) {
+            if (/\.md(\?|$)/i.test(materialDocPath)) {
               // Markdown is rendered into the editor; it round-trips back out
               // through the existing turndown export.
               q.clipboard.dangerouslyPasteHTML(raw);
@@ -308,7 +323,7 @@ export default function QuillEditor({ isOpen, onClose, material }: QuillEditorPr
                 setDocumentAnchors(anchorsInDelta(delta));
               }
             }
-            setFileName(material.docPath.split('/').pop() || 'document');
+            setFileName(materialDocPath.split('/').pop() || 'document');
           } catch (err) {
             console.error('Не удалось загрузить документ материала:', err);
             if (isMounted) {
@@ -338,7 +353,7 @@ export default function QuillEditor({ isOpen, onClose, material }: QuillEditorPr
       isMounted = false;
       quillRef.current = null;
     };
-  }, [isOpen, material]);
+  }, [isOpen, materialId, materialLangCode, materialDocPath]);
 
   /** Drops a chapter marker at the cursor and leaves the caret after it. */
   const insertChapterMarker = useCallback((anchor: string) => {

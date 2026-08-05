@@ -1,7 +1,7 @@
 // src/app/document-editor/page.tsx
 'use client';
 
-import { Suspense } from 'react';
+import { Suspense, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import QuillEditor, { QuillEditorMaterial } from '@/components/QuillEditor';
 
@@ -25,10 +25,13 @@ function DocumentEditorContent() {
   const langCode = searchParams.get('lang_code');
   const docPath = searchParams.get('doc');
 
-  const material: QuillEditorMaterial | undefined =
-    materialId && langCode && docPath
-      ? { materialId, langCode, docPath }
-      : undefined;
+  // Memoised so the editor sees a stable identity: it keys its Quill instance
+  // off this, and a new object each render would remount the editor.
+  const material: QuillEditorMaterial | undefined = useMemo(
+    () =>
+      materialId && langCode && docPath ? { materialId, langCode, docPath } : undefined,
+    [materialId, langCode, docPath]
+  );
 
   const handleClose = () => {
     // Return to wherever the user came from (usually the materials page, with its
