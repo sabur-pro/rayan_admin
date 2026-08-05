@@ -1,8 +1,9 @@
 // src/app/document-editor/page.tsx
 'use client';
 
-import { useRouter } from 'next/navigation';
-import QuillEditor from '@/components/QuillEditor';
+import { Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import QuillEditor, { QuillEditorMaterial } from '@/components/QuillEditor';
 
 /**
  * Standalone full-screen document editor route.
@@ -11,9 +12,23 @@ import QuillEditor from '@/components/QuillEditor';
  * `fixed inset-0` is positioned against the viewport instead of the dashboard's
  * `.glass` wrapper — whose `backdrop-filter` would otherwise become the containing
  * block for the fixed element, breaking both full-screen sizing and internal scroll.
+ *
+ * With `material_id`, `lang_code` and `doc` in the query string the editor opens
+ * an existing book: it loads that document, manages its chapters and saves back
+ * to the material. Without them it is the standalone editor that downloads a file.
  */
-export default function DocumentEditorPage() {
+function DocumentEditorContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const materialId = Number(searchParams.get('material_id'));
+  const langCode = searchParams.get('lang_code');
+  const docPath = searchParams.get('doc');
+
+  const material: QuillEditorMaterial | undefined =
+    materialId && langCode && docPath
+      ? { materialId, langCode, docPath }
+      : undefined;
 
   const handleClose = () => {
     // Return to wherever the user came from (usually the materials page, with its
@@ -25,5 +40,14 @@ export default function DocumentEditorPage() {
     }
   };
 
-  return <QuillEditor isOpen onClose={handleClose} />;
+  return <QuillEditor isOpen onClose={handleClose} material={material} />;
+}
+
+export default function DocumentEditorPage() {
+  // useSearchParams requires a Suspense boundary during static rendering.
+  return (
+    <Suspense fallback={null}>
+      <DocumentEditorContent />
+    </Suspense>
+  );
 }

@@ -2,12 +2,14 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { fetchWithAuth, API_BASE_URL } from '@/lib/http';
-import { X, Loader2, Upload, FileText, Trash2 } from 'lucide-react';
+import { X, Loader2, Upload, FileText, Trash2, BookOpen } from 'lucide-react';
 import type { Material } from '../../types/material';
 import { isAudioFile, isVideoFile } from '@/lib/fileUtils';
 import AudioTimecodeManager from '@/components/AudioTimecodeManager';
+import { isBookDocument } from '@/lib/chapter';
 
 interface EditMaterialModalProps {
   isOpen: boolean;
@@ -24,6 +26,7 @@ export default function EditMaterialModal({
   langCode,
   onMaterialUpdated,
 }: EditMaterialModalProps) {
+  const router = useRouter();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [status, setStatus] = useState<'draft' | 'published'>('draft');
@@ -287,6 +290,39 @@ export default function EditMaterialModal({
                         )}
                       </button>
                     </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Книги: правка документа и его оглавления */}
+            {translation?.paths && translation.paths.filter(isBookDocument).length > 0 && (
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Книги и оглавление
+                </label>
+                <div className="space-y-2">
+                  {translation.paths.filter(isBookDocument).map((bookPath: string) => (
+                    <button
+                      key={bookPath}
+                      type="button"
+                      onClick={() =>
+                        router.push(
+                          `/document-editor?material_id=${material.id}` +
+                            `&lang_code=${encodeURIComponent(langCode)}` +
+                            `&doc=${encodeURIComponent(bookPath)}`
+                        )
+                      }
+                      className="w-full flex items-center gap-2 p-3 border rounded-lg hover:border-primary hover:bg-accent/50 transition-colors text-left"
+                    >
+                      <BookOpen className="w-4 h-4 text-primary flex-shrink-0" />
+                      <span className="truncate flex-1 text-sm">
+                        {bookPath.split('/').pop()}
+                      </span>
+                      <span className="text-xs text-muted-foreground flex-shrink-0">
+                        Открыть редактор глав
+                      </span>
+                    </button>
                   ))}
                 </div>
               </div>

@@ -1,12 +1,15 @@
 // src/components/QuillEditor.tsx
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
-import { X, Download, Upload, ImagePlus } from 'lucide-react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { X, Download, Upload, ImagePlus, Save, Loader2, ListTree } from 'lucide-react';
 import TurndownService from 'turndown';
 import 'react-quill/dist/quill.snow.css';
 import 'katex/dist/katex.min.css';
 import FileGallery from '@/components/FileGallery';
+import ChapterManager from '@/components/ChapterManager';
+import { API_BASE_URL, fetchWithAuth } from '@/lib/http';
+import { rebindDocument } from '@/lib/chapter';
 import {
   DocThemeSwitcher,
   DocEditorThemeStyles,
@@ -17,10 +20,29 @@ import {
   registerQuillSizes,
   QUILL_SIZE_TOOLBAR_HTML,
 } from '@/lib/quillSize';
+import {
+  registerChapterBlot,
+  CHAPTER_MARKER_STYLES,
+  anchorsInDelta,
+} from '@/lib/quillChapter';
+
+/**
+ * Material context. When all three are supplied the editor works *on* a book
+ * that already exists: it loads that document, manages its chapters and saves
+ * back to the material. Without them it stays the standalone
+ * download-a-file editor it has always been.
+ */
+export interface QuillEditorMaterial {
+  materialId: number;
+  langCode: string;
+  /** URL of the book document being edited. */
+  docPath: string;
+}
 
 interface QuillEditorProps {
   isOpen: boolean;
   onClose: () => void;
+  material?: QuillEditorMaterial;
 }
 
 interface QuillRange { index: number; length: number }
@@ -36,11 +58,12 @@ interface QuillInstance {
   format?: (name: string, value: unknown) => void;
   setSelection?: (index: number, length: number) => void;
   focus?: () => void;
+  root?: HTMLElement;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   on?: (event: string, handler: (...args: any[]) => void) => void;
 }
 
-export default function QuillEditor({ isOpen, onClose }: QuillEditorProps) {
+export default function QuillEditor({ isOpen, onClose, material }: QuillEditorProps) {
   const [fileName, setFileName] = useState('document.md');
   const [showGallery, setShowGallery] = useState(false);
   const [previewTheme, changeTheme] = useDocThemePreference();
@@ -50,6 +73,19 @@ export default function QuillEditor({ isOpen, onClose }: QuillEditorProps) {
   const quillRef = useRef<QuillInstance | null>(null);
   const lastRangeRef = useRef<QuillRange | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Book mode: chapter panel, load-from-material, save-to-material.
+  const [showChapters, setShowChapters] = useState(Boolean(material));
+  const [documentAnchors, setDocumentAnchors] = useState<string[]>([]);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [savedAt, setSavedAt] = useState<string | null>(null);
+  /**
+   * Path the chapters are currently filed under. Saving replaces the file and
+   * yields a new path, so this advances after each successful save and is what
+   * subsequent saves rebind *from*.
+   */
+  const [docPath, setDocPath] = useState(material?.docPath ?? '');
 
   // Lock body scroll when editor is open
   useEffect(() => {
@@ -72,6 +108,9 @@ export default function QuillEditor({ isOpen, onClose }: QuillEditorProps) {
 
       // Регистрируем размеры шрифта (px + произвольные значения)
       registerQuillSizes(Quill);
+
+      // Инлайновый маркер начала главы (см. src/lib/quillChapter.ts)
+      registerChapterBlot(Quill);
 
       // Импортируем KaTeX для формул
       const katex = (await import('katex')).default;
@@ -243,10 +282,43 @@ export default function QuillEditor({ isOpen, onClose }: QuillEditorProps) {
           }
         });
 
-        // Set initial content
-        q.clipboard.dangerouslyPasteHTML('<h1>Новый документ</h1><p>Начните создание вашего документа здесь...</p>');
-
         quillRef.current = q as QuillInstance;
+
+        if (material) {
+          // Editing an existing book: pull the stored document in rather than
+          // starting from the "new document" placeholder.
+          try {
+            const response = await fetch(material.docPath);
+            const raw = await response.text();
+            if (!isMounted) return;
+
+            if (/\.md(\?|$)/i.test(material.docPath)) {
+              // Markdown is rendered into the editor; it round-trips back out
+              // through the existing turndown export.
+              q.clipboard.dangerouslyPasteHTML(raw);
+            } else {
+              const delta = JSON.parse(raw);
+              if (delta?.ops) {
+                q.setContents(delta);
+                setDocumentAnchors(anchorsInDelta(delta));
+              }
+            }
+            setFileName(material.docPath.split('/').pop() || 'document');
+          } catch (err) {
+            console.error('Не удалось загрузить документ материала:', err);
+            if (isMounted) {
+              setSaveError('Не удалось загрузить документ материала');
+            }
+          }
+        } else {
+          // Set initial content
+          q.clipboard.dangerouslyPasteHTML('<h1>Новый документ</h1><p>Начните создание вашего документа здесь...</p>');
+        }
+
+        // Keep the chapter panel's "marker present?" checks in step with edits.
+        (q as QuillInstance).on?.('text-change', () => {
+          setDocumentAnchors(anchorsInDelta(q.getContents()));
+        });
 
         // Remember the last editor selection so the custom size input (which steals focus)
         // can restore it before applying a size.
@@ -259,7 +331,103 @@ export default function QuillEditor({ isOpen, onClose }: QuillEditorProps) {
       isMounted = false;
       quillRef.current = null;
     };
-  }, [isOpen]);
+  }, [isOpen, material]);
+
+  /** Drops a chapter marker at the cursor and leaves the caret after it. */
+  const insertChapterMarker = useCallback((anchor: string) => {
+    const quill = quillRef.current;
+    if (!quill) return;
+    const range = lastRangeRef.current || quill.getSelection?.(true) || { index: 0, length: 0 };
+    quill.insertEmbed?.(range.index, 'chapter', anchor, 'user');
+    quill.setSelection?.(range.index + 1, 0);
+    setDocumentAnchors(anchorsInDelta(quill.getContents()));
+  }, []);
+
+  /** Scrolls the editor to an existing marker so the admin can see where it sits. */
+  const focusChapterMarker = useCallback((anchor: string) => {
+    const node = editorHostRef.current?.querySelector(`[data-chapter="${anchor}"]`);
+    node?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, []);
+
+  /**
+   * Writes the document back to the material.
+   *
+   * The API replaces a file by storing new content under a fresh name, so the
+   * document's path changes on every save. The reader's chapters, bookmarks,
+   * quotes and progress are all keyed by that path — hence the rebind call
+   * immediately after, which moves them onto the new path. If the rebind fails
+   * the admin is told loudly: the file saved, but the book just lost its
+   * table of contents.
+   */
+  const handleSaveToMaterial = async () => {
+    const quill = quillRef.current;
+    if (!quill || !material) return;
+
+    setSaving(true);
+    setSaveError(null);
+    try {
+      const isMarkdown = /\.md(\?|$)/i.test(docPath);
+      let blob: Blob;
+      let uploadName: string;
+
+      if (isMarkdown) {
+        const turndownService = new TurndownService({
+          headingStyle: 'atx',
+          codeBlockStyle: 'fenced',
+        });
+        turndownService.addRule('strikethrough', {
+          filter: ['del', 's'],
+          replacement: (content: string) => `~~${content}~~`,
+        });
+        // Chapter markers must survive the HTML → Markdown trip, otherwise the
+        // table of contents loses every position on save.
+        turndownService.addRule('chapterMarker', {
+          filter: (node: HTMLElement) => node.hasAttribute?.('data-chapter'),
+          replacement: (_content: string, node: Node) =>
+            `<span data-chapter="${(node as HTMLElement).getAttribute('data-chapter')}"></span>`,
+        });
+
+        const html = editorHostRef.current?.querySelector('.ql-editor')?.innerHTML || '';
+        blob = new Blob([turndownService.turndown(html)], { type: 'text/markdown;charset=utf-8' });
+        uploadName = docPath.split('/').pop() || 'document.md';
+      } else {
+        const delta = quill.getContents();
+        blob = new Blob([JSON.stringify(delta)], { type: 'application/json;charset=utf-8' });
+        uploadName = docPath.split('/').pop() || 'document.json';
+      }
+
+      const relativeOldPath = docPath.replace(`${API_BASE_URL}/`, '');
+
+      const formData = new FormData();
+      formData.append('material_id', String(material.materialId));
+      formData.append('lang_code', material.langCode);
+      formData.append('paths', relativeOldPath);
+      formData.append('files', blob, uploadName);
+
+      const response = await fetchWithAuth(`${API_BASE_URL}/material/translation/files`, {
+        method: 'PUT',
+        body: formData,
+      });
+      if (!response.ok) {
+        const text = await response.text().catch(() => '');
+        throw new Error(`Ошибка сохранения: ${response.status} ${text}`);
+      }
+
+      const saved = await response.json();
+      const newPath: string = Array.isArray(saved) ? saved[0] : saved?.[0] ?? '';
+      if (!newPath) {
+        throw new Error('Сервер не вернул путь сохранённого файла');
+      }
+
+      await rebindDocument(material.materialId, material.langCode, docPath, newPath);
+      setDocPath(newPath);
+      setSavedAt(new Date().toLocaleTimeString('ru-RU'));
+    } catch (e) {
+      setSaveError(e instanceof Error ? e.message : 'Не удалось сохранить документ');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const handleDownload = () => {
     const turndownService = new TurndownService({
@@ -393,7 +561,9 @@ export default function QuillEditor({ isOpen, onClose }: QuillEditorProps) {
         {/* Верхняя панель */}
         <div className="border-b bg-background px-3 md:px-6 py-3 md:py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3 shrink-0">
           <div className="flex flex-wrap items-center gap-2 md:gap-4 min-w-0">
-            <h2 className="text-lg md:text-2xl font-bold">Создать документ</h2>
+            <h2 className="text-lg md:text-2xl font-bold">
+              {material ? 'Редактировать книгу' : 'Создать документ'}
+            </h2>
             <input
               type="text"
               value={fileName}
@@ -424,6 +594,36 @@ export default function QuillEditor({ isOpen, onClose }: QuillEditorProps) {
           </div>
           <div className="flex flex-wrap items-center gap-2 md:gap-3">
             <DocThemeSwitcher value={previewTheme} onChange={changeTheme} />
+            {material && (
+              <>
+                <button
+                  onClick={() => setShowChapters(!showChapters)}
+                  className={`flex items-center gap-2 px-3 md:px-4 py-2 rounded-lg transition-colors font-medium ${showChapters
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-accent hover:bg-accent/80'
+                    }`}
+                  title="Главы книги"
+                >
+                  <ListTree className="w-5 h-5" />
+                  <span className="hidden sm:inline">Главы</span>
+                </button>
+                <button
+                  onClick={handleSaveToMaterial}
+                  disabled={saving}
+                  className="flex items-center gap-2 px-3 md:px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium disabled:opacity-50"
+                  title="Сохранить документ в материал"
+                >
+                  {saving ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <Save className="w-5 h-5" />
+                  )}
+                  <span className="hidden sm:inline">
+                    {saving ? 'Сохранение...' : 'Сохранить'}
+                  </span>
+                </button>
+              </>
+            )}
             <button
               onClick={() => setShowGallery(!showGallery)}
               className={`flex items-center gap-2 px-3 md:px-4 py-2 rounded-lg transition-colors font-medium ${showGallery
@@ -482,6 +682,17 @@ export default function QuillEditor({ isOpen, onClose }: QuillEditorProps) {
           </div>
         </div>
 
+        {(saveError || savedAt) && (
+          <div
+            className={`px-3 md:px-6 py-2 text-sm shrink-0 ${saveError
+              ? 'bg-destructive/10 text-destructive border-b border-destructive/20'
+              : 'bg-green-600/10 text-green-700 dark:text-green-400 border-b border-green-600/20'
+              }`}
+          >
+            {saveError || `Документ сохранён в ${savedAt}`}
+          </div>
+        )}
+
         {/* Main content area with editor and gallery */}
         <div className="flex-1 overflow-hidden flex flex-col md:flex-row">
           {/* Редактор Quill */}
@@ -489,6 +700,22 @@ export default function QuillEditor({ isOpen, onClose }: QuillEditorProps) {
             <div ref={toolbarRef} className="ql-toolbar ql-snow"></div>
             <div ref={editorHostRef} className="ql-container ql-snow" style={{ flex: 1 }}></div>
           </div>
+
+          {/* Chapter sidebar — only meaningful when editing an actual book. */}
+          {material && showChapters && (
+            <div className="w-full md:w-96 h-1/2 md:h-auto border-t md:border-t-0 md:border-l bg-background flex flex-col shrink-0">
+              <ChapterManager
+                key={docPath}
+                materialId={material.materialId}
+                langCode={material.langCode}
+                docPath={docPath}
+                anchorsInDocument={documentAnchors}
+                onInsertMarker={insertChapterMarker}
+                onFocusMarker={focusChapterMarker}
+                className="h-full"
+              />
+            </div>
+          )}
 
           {/* File Gallery Sidebar — full width on mobile, fixed sidebar on desktop */}
           {showGallery && (
@@ -500,6 +727,7 @@ export default function QuillEditor({ isOpen, onClose }: QuillEditorProps) {
       </div>
 
       <DocEditorThemeStyles />
+      <style jsx global>{CHAPTER_MARKER_STYLES}</style>
     </div>
   );
 }
