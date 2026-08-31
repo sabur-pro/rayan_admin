@@ -61,7 +61,7 @@ export function AddIncomeModal({ isOpen, onClose, onSubmit }: AddIncomeModalProp
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Сумма (сом)</label>
+              <label className="block text-sm font-medium mb-2">Сумма (c.)</label>
               <input
                 type="number"
                 step="0.01"
@@ -102,7 +102,7 @@ export function AddIncomeModal({ isOpen, onClose, onSubmit }: AddIncomeModalProp
             {parsedAmount > 0 && (
               <div className="p-4 rounded-lg bg-green-500/10 border border-green-500/30 flex justify-between items-center">
                 <span className="text-sm">Сумма дохода:</span>
-                <span className="text-xl font-bold text-green-500">+{parsedAmount.toFixed(2)} сом</span>
+                <span className="text-xl font-bold text-green-500">+{parsedAmount.toFixed(2)} c</span>
               </div>
             )}
 

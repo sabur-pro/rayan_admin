@@ -806,7 +806,7 @@ export default function UsersPage() {
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Цена:</span>
-                        <span className="font-medium">{sub.price} сомони</span>
+                        <span className="font-medium">{sub.price} c</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Начало:</span>

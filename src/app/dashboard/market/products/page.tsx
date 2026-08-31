@@ -237,8 +237,8 @@ export default function ProductsPage() {
                 <span className="inline-block mb-2 px-2 py-0.5 bg-primary/10 text-primary text-xs rounded-full">{p.tag}</span>
               )}
               <div className="flex items-baseline gap-2 mb-2">
-                <span className="text-lg font-bold text-primary">{p.price} сом.</span>
-                <span className="text-xs text-muted-foreground line-through">{p.cost_price} сом.</span>
+                <span className="text-lg font-bold text-primary">{p.price} c.</span>
+                <span className="text-xs text-muted-foreground line-through">{p.cost_price} c.</span>
               </div>
               <div className="flex items-center justify-between text-xs text-muted-foreground">
                 <span>Склад: {p.stock}</span>

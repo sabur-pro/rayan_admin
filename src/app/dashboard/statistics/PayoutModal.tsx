@@ -63,11 +63,11 @@ export function PayoutModal({ isOpen, onClose, founder, onSubmit }: PayoutModalP
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="flex justify-between items-center p-3 rounded-lg bg-blue-500/10">
               <span className="text-sm">Доступно к выплате:</span>
-              <span className="font-bold text-blue-500">{founder.balance.toFixed(2)} сом</span>
+              <span className="font-bold text-blue-500">{founder.balance.toFixed(2)} c</span>
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Сумма выплаты (сом)</label>
+              <label className="block text-sm font-medium mb-2">Сумма выплаты (c)</label>
               <input
                 type="number"
                 step="0.01"
@@ -101,7 +101,7 @@ export function PayoutModal({ isOpen, onClose, founder, onSubmit }: PayoutModalP
             {parsedAmount > 0 && !insufficient && (
               <div className="flex justify-between items-center text-sm text-muted-foreground">
                 <span>Останется на счёте:</span>
-                <span>{remaining.toFixed(2)} сом</span>
+                <span>{remaining.toFixed(2)} c</span>
               </div>
             )}
 

@@ -90,7 +90,7 @@ export function AddExpenseModal({ isOpen, onClose, onSubmit }: AddExpenseModalPr
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Сумма (сом)</label>
+              <label className="block text-sm font-medium mb-2">Сумма ( c.)</label>
               <input
                 type="number"
                 step="0.01"
@@ -131,7 +131,7 @@ export function AddExpenseModal({ isOpen, onClose, onSubmit }: AddExpenseModalPr
             {parsedAmount > 0 && (
               <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/30 flex justify-between items-center">
                 <span className="text-sm">Сумма расхода:</span>
-                <span className="text-xl font-bold text-red-500">-{parsedAmount.toFixed(2)} сом</span>
+                <span className="text-xl font-bold text-red-500">-{parsedAmount.toFixed(2)} c.</span>
               </div>
             )}
 

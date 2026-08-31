@@ -136,7 +136,7 @@ export default function OrdersPage() {
             <CardContent className="p-3 flex items-end gap-2">
               <div>
                 <label className="text-xs font-medium mb-1 flex items-center gap-1 text-muted-foreground">
-                  <Truck className="h-3.5 w-3.5" />Стоимость доставки (сом.)
+                  <Truck className="h-3.5 w-3.5" />Стоимость доставки (c.)
                 </label>
                 <Input
                   type="number"

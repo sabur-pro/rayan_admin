@@ -18,7 +18,7 @@ import {
 import type { MonthlyPoint } from '../../../../types/finance';
 import { INCOME_SOURCE_LABELS, EXPENSE_CATEGORY_LABELS } from '../../../../types/finance';
 
-const fmt = (v: number) => `${Number(v).toLocaleString('ru-RU')} сом`;
+const fmt = (v: number) => `${Number(v).toLocaleString('ru-RU')} c`;
 
 function monthLabel(month: string): string {
   // "2026-05" -> "05.2026"

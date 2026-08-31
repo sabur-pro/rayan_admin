@@ -50,7 +50,7 @@ import {
   EXPENSE_CATEGORY_LABELS,
 } from '../../../../types/finance';
 
-const fmtMoney = (v: number) => `${Number(v || 0).toLocaleString('ru-RU', { maximumFractionDigits: 2 })} сом`;
+const fmtMoney = (v: number) => `${Number(v || 0).toLocaleString('ru-RU', { maximumFractionDigits: 2 })} c`;
 
 function monthLabelRu(month: string): string {
   const [y, m] = month.split('-');
@@ -425,7 +425,7 @@ export default function FinancesPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Receipt className="h-5 w-5" />
-                Налог по месяцам (202 сом + 6% от оборота; при обороте {'>'} 20200 — 7% без фикс. части)
+                Налог по месяцам (202 c + 6% от оборота; при обороте {'>'} 20200 — 7% без фикс. части)
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -451,7 +451,7 @@ export default function FinancesPage() {
                           <td className="px-4 py-3 text-sm font-medium">{monthLabelRu(m.month)}</td>
                           <td className="px-4 py-3 text-sm">{fmtMoney(m.turnover)}</td>
                           <td className="px-4 py-3 text-sm">
-                            {(m.rate * 100).toFixed(0)}%{m.fixed > 0 ? ` + ${m.fixed} сом` : ''}
+                            {(m.rate * 100).toFixed(0)}%{m.fixed > 0 ? ` + ${m.fixed} c` : ''}
                           </td>
                           <td className="px-4 py-3 text-sm">{fmtMoney(m.computed)}</td>
                           <td className="px-4 py-3 text-sm text-green-600">{fmtMoney(m.paid)}</td>
