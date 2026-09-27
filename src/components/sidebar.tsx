@@ -13,7 +13,8 @@ import {
   Moon,
   Home,
   ShoppingBag,
-  Bell
+  Bell,
+  FolderKanban
 } from 'lucide-react';
 import { removeAuthCookies } from '@/lib/cookies';
 import { authApi } from '@/lib/api-client';
@@ -52,6 +53,11 @@ const adminNavigation = [
     name: 'Уведомления',
     href: '/dashboard/notifications',
     icon: Bell,
+  },
+  {
+    name: 'Проекты',
+    href: '/dashboard/projects',
+    icon: FolderKanban,
   },
 ];
 

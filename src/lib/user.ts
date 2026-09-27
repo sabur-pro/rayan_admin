@@ -31,6 +31,9 @@ export async function getUsers(params: UsersQueryParams): Promise<UsersResponse>
   if (params.login) {
     searchParams.set('login', params.login);
   }
+  if (params.subscription_status) {
+    searchParams.set('subscription_status', params.subscription_status);
+  }
 
   const url = `${API_BASE_URL}/user?${searchParams.toString()}`;
   

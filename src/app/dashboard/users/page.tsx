@@ -27,6 +27,23 @@ const LANGS: { code: LangCode; label: string }[] = [
   { code: 'kz', label: 'Қазақша (kz)' },
 ];
 
+type UserSubscriptionStatus = 'active' | 'trial' | 'no_subscription' | 'expired';
+
+/** Mutually exclusive — every user is in exactly one, so they add up to the total. */
+const USER_STATUSES: {
+  value: UserSubscriptionStatus;
+  label: string;
+  hint: string;
+  color: string;
+  bg: string;
+  badge: string;
+}[] = [
+  { value: 'active', label: 'Активно', hint: 'Есть действующая подписка', color: 'text-green-600', bg: 'bg-green-500/10', badge: 'bg-green-500/15 text-green-700 dark:text-green-400' },
+  { value: 'trial', label: 'Пробник', hint: 'Идёт 7-дневный пробный период', color: 'text-blue-600', bg: 'bg-blue-500/10', badge: 'bg-blue-500/15 text-blue-700 dark:text-blue-400' },
+  { value: 'no_subscription', label: 'Без подписки', hint: 'Пробный период закончился, подписку не покупали', color: 'text-muted-foreground', bg: 'bg-muted/50', badge: 'bg-muted text-muted-foreground' },
+  { value: 'expired', label: 'Просроченный', hint: 'Купленная подписка закончилась', color: 'text-red-600', bg: 'bg-red-500/10', badge: 'bg-red-500/15 text-red-700 dark:text-red-400' },
+];
+
 const ROLES = [
   { value: 'user', label: 'Пользователь' },
   { value: 'admin', label: 'Администратор' },
@@ -37,7 +54,11 @@ export default function UsersPage() {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(50);
   const [role, setRole] = useState('user');
-  const [langCode, setLangCode] = useState<LangCode>('ru');
+  // '' = all languages. This filters users by their app language; names of
+  // universities/faculties/courses in the selectors are shown in displayLang.
+  const [langCode, setLangCode] = useState<LangCode | ''>('');
+  const displayLang: LangCode = langCode || 'ru';
+  const [userStatus, setUserStatus] = useState<UserSubscriptionStatus | ''>('');
   const [universityId, setUniversityId] = useState<number>(0);
   const [facultyId, setFacultyId] = useState<number>(0);
   const [courseId, setCourseId] = useState<number>(0);
@@ -210,7 +231,7 @@ export default function UsersPage() {
     async function loadUniversities() {
       setUniversitiesLoading(true);
       try {
-        const res = await api.getUniversityTranslations(langCode, 1, 100);
+        const res = await api.getUniversityTranslations(displayLang, 1, 100);
         if (!cancelled) setUniversities(res.data);
       } catch (err) {
         console.error('Failed to load universities:', err);
@@ -220,7 +241,7 @@ export default function UsersPage() {
     }
     loadUniversities();
     return () => { cancelled = true; };
-  }, [langCode]);
+  }, [displayLang]);
 
   // Загрузка факультетов
   useEffect(() => {
@@ -233,7 +254,7 @@ export default function UsersPage() {
     async function loadFaculties() {
       setFacultiesLoading(true);
       try {
-        const res = await api.getFaculties(universityId, langCode, 1, 100);
+        const res = await api.getFaculties(universityId, displayLang, 1, 100);
         if (!cancelled) setFaculties(res.data);
       } catch (err) {
         console.error('Failed to load faculties:', err);
@@ -243,7 +264,7 @@ export default function UsersPage() {
     }
     loadFaculties();
     return () => { cancelled = true; };
-  }, [universityId, langCode]);
+  }, [universityId, displayLang]);
 
   // Загрузка курсов
   useEffect(() => {
@@ -251,7 +272,7 @@ export default function UsersPage() {
     async function loadCourses() {
       setCoursesLoading(true);
       try {
-        const res = await getCourses(langCode, 1, 100);
+        const res = await getCourses(displayLang, 1, 100);
         if (!cancelled) setCourses(res.data);
       } catch (err) {
         console.error('Failed to load courses:', err);
@@ -261,7 +282,7 @@ export default function UsersPage() {
     }
     loadCourses();
     return () => { cancelled = true; };
-  }, [langCode]);
+  }, [displayLang]);
 
   // Загрузка семестров
   useEffect(() => {
@@ -296,6 +317,7 @@ export default function UsersPage() {
         university_id: universityId > 0 ? universityId : undefined,
         faculty_id: facultyId > 0 ? facultyId : undefined,
         login: loginSearch || undefined,
+        subscription_status: userStatus || undefined,
       });
       setUsers(res.data);
       setTotalCount(res.total_count);
@@ -307,7 +329,7 @@ export default function UsersPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, limit, role, langCode, courseId, semesterId, universityId, facultyId, loginSearch]);
+  }, [page, limit, role, langCode, courseId, semesterId, universityId, facultyId, loginSearch, userStatus]);
 
   useEffect(() => {
     loadUsers();
@@ -342,6 +364,11 @@ export default function UsersPage() {
       setSubsStatsLoading(false);
     }
   }, []);
+
+  // Счётчики статусов на вкладке «Пользователи»
+  useEffect(() => {
+    if (activeTab === 'users') loadSubsStats();
+  }, [activeTab, loadSubsStats]);
 
   // Загрузка подписок
   const loadSubscriptionsData = useCallback(async (pageNum: number, append = false) => {
@@ -514,6 +541,40 @@ export default function UsersPage() {
       {/* Контент для Пользователей */}
       {activeTab === 'users' && (
         <>
+          {/* Статусы пользователей — клик по карточке фильтрует список */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {USER_STATUSES.map((st) => {
+              const selected = userStatus === st.value;
+              return (
+                <button
+                  key={st.value}
+                  type="button"
+                  onClick={() => { setUserStatus(selected ? '' : st.value); handleFilterChange(); }}
+                  title={st.hint}
+                  className={`text-left rounded-xl border transition-all glass ${st.bg} ${selected ? 'ring-2 ring-primary border-primary' : 'border-transparent hover:border-muted-foreground/30'}`}
+                >
+                  <div className="p-4 flex flex-col gap-1">
+                    <span className="text-xs text-muted-foreground">{st.label}</span>
+                    <span className={`text-2xl font-bold ${st.color}`}>
+                      {subsStatsLoading ? '...' : (subsStats?.[st.value] ?? '—')}
+                    </span>
+                    <span className="text-[11px] text-muted-foreground leading-tight">{st.hint}</span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+          {subsStats && (
+            <div className="text-xs text-muted-foreground -mt-3">
+              Всего пользователей: {subsStats.total}
+              {userStatus && (
+                <button type="button" onClick={() => { setUserStatus(''); handleFilterChange(); }} className="ml-3 underline hover:text-foreground">
+                  Сбросить фильтр статуса
+                </button>
+              )}
+            </div>
+          )}
+
           <Card className="glass">
             <CardContent className="p-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
@@ -541,7 +602,8 @@ export default function UsersPage() {
                 </div>
                 <div className="flex flex-col gap-1">
                   <label className="text-sm text-muted-foreground">Язык</label>
-                  <select value={langCode} onChange={(e) => { setLangCode(e.target.value as LangCode); handleFilterChange(); }} className="px-3 py-2 rounded-md border bg-transparent">
+                  <select value={langCode} onChange={(e) => { setLangCode(e.target.value as LangCode | ''); handleFilterChange(); }} className="px-3 py-2 rounded-md border bg-transparent">
+                    <option value="">Все языки</option>
                     {LANGS.map((l) => <option key={l.code} value={l.code}>{l.label}</option>)}
                   </select>
                 </div>
@@ -604,6 +666,7 @@ export default function UsersPage() {
                       <th className="px-4 py-3 text-left text-sm font-medium">ID</th>
                       <th className="px-4 py-3 text-left text-sm font-medium">Логин</th>
                       <th className="px-4 py-3 text-left text-sm font-medium">Роль</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium">Статус</th>
                       <th className="px-4 py-3 text-left text-sm font-medium">Язык</th>
                       <th className="px-4 py-3 text-left text-sm font-medium">Курс</th>
                       <th className="px-4 py-3 text-left text-sm font-medium">Семестр</th>
@@ -615,9 +678,9 @@ export default function UsersPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y">
-                    {loading && <tr><td colSpan={11} className="px-4 py-8 text-center text-muted-foreground">Загрузка...</td></tr>}
-                    {!loading && error && <tr><td colSpan={11} className="px-4 py-8 text-center text-destructive">{error}</td></tr>}
-                    {!loading && !error && users.length === 0 && <tr><td colSpan={11} className="px-4 py-8 text-center text-muted-foreground">Пользователи не найдены</td></tr>}
+                    {loading && <tr><td colSpan={12} className="px-4 py-8 text-center text-muted-foreground">Загрузка...</td></tr>}
+                    {!loading && error && <tr><td colSpan={12} className="px-4 py-8 text-center text-destructive">{error}</td></tr>}
+                    {!loading && !error && users.length === 0 && <tr><td colSpan={12} className="px-4 py-8 text-center text-muted-foreground">Пользователи не найдены</td></tr>}
                     {!loading && !error && users.map((user) => (
                       <tr key={user.id} className="hover:bg-muted/30 transition-colors">
                         <td className="px-4 py-3 text-sm">{user.id}</td>
@@ -626,6 +689,14 @@ export default function UsersPage() {
                           <span className={`px-2 py-1 rounded-full text-xs ${user.role === 'admin' ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
                             {user.role === 'admin' ? 'Админ' : 'Пользователь'}
                           </span>
+                        </td>
+                        <td className="px-4 py-3 text-sm">
+                          {(() => {
+                            const st = USER_STATUSES.find((x) => x.value === user.subscription_status);
+                            return st ? (
+                              <span className={`px-2 py-1 rounded-full text-xs whitespace-nowrap ${st.badge}`} title={st.hint}>{st.label}</span>
+                            ) : '-';
+                          })()}
                         </td>
                         <td className="px-4 py-3 text-sm">{user.lang_code?.toUpperCase()}</td>
                         <td className="px-4 py-3 text-sm">{user.course_id > 0 ? 7 - user.course_id : '-'}</td>
@@ -676,10 +747,7 @@ export default function UsersPage() {
           {/* Статистика */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
-              { label: 'Активных', value: subsStats?.active, color: 'text-green-600', bg: 'bg-green-500/10' },
-              { label: 'Просрочено', value: subsStats?.expired, color: 'text-red-600', bg: 'bg-red-500/10' },
-              { label: 'В пробнике', value: subsStats?.trial, color: 'text-blue-600', bg: 'bg-blue-500/10' },
-              { label: 'Без подписки', value: subsStats?.never_purchased, color: 'text-muted-foreground', bg: 'bg-muted/50' },
+              ...USER_STATUSES.map((st) => ({ label: st.label, value: subsStats?.[st.value], color: st.color, bg: st.bg })),
             ].map((s) => (
               <Card key={s.label} className={`glass ${s.bg}`}>
                 <CardContent className="p-4 flex flex-col gap-1">

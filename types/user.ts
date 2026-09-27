@@ -11,6 +11,7 @@ export interface User {
   role: string;
   created_at: string;
   updated_at: string;
+  subscription_status?: 'active' | 'trial' | 'no_subscription' | 'expired';
   faculty?: {
     id: number;
     subjects?: Array<{
@@ -38,6 +39,7 @@ export interface UsersQueryParams {
   university_id?: number;
   faculty_id?: number;
   login?: string;
+  subscription_status?: 'active' | 'trial' | 'no_subscription' | 'expired';
 }
 
 export type SubscriptionStatus = 'pending' | 'accepted' | 'denied';
@@ -76,9 +78,13 @@ export interface SubscriptionQueryParams {
   validity?: 'active' | 'expired' | 'approaching' | '';
 }
 
+/** Users by subscription status; mutually exclusive, so they add up to total. */
 export interface SubscriptionStats {
   active: number;
-  expired: number;
   trial: number;
+  no_subscription: number;
+  expired: number;
+  total: number;
+  /** @deprecated same as no_subscription */
   never_purchased: number;
 }
