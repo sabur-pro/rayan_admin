@@ -96,7 +96,6 @@ export default function UsersPage() {
   const [subsHasMore, setSubsHasMore] = useState(true);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  const [subType, setSubType] = useState<'trial' | 'regular' | ''>('');
   const [validity, setValidity] = useState<'active' | 'expired' | 'approaching' | ''>('');
   const [subsStats, setSubsStats] = useState<SubscriptionStats | null>(null);
   const [subsStatsLoading, setSubsStatsLoading] = useState(false);
@@ -383,7 +382,6 @@ export default function UsersPage() {
         limit: subsLimit,
         start_date: startDate || undefined,
         end_date: endDate || undefined,
-        sub_type: subType || undefined,
         validity: validity || undefined,
       });
       if (append) {
@@ -399,7 +397,7 @@ export default function UsersPage() {
       setSubsLoading(false);
       subsLoadingMore.current = false;
     }
-  }, [subsLimit, startDate, endDate, subType, validity]);
+  }, [subsLimit, startDate, endDate, validity]);
 
   // Загрузка подписок при переключении таба
   useEffect(() => {
@@ -410,7 +408,7 @@ export default function UsersPage() {
       loadSubscriptionsData(1, false);
       loadSubsStats();
     }
-  }, [activeTab, startDate, endDate, subType, validity, loadSubscriptionsData, loadSubsStats]);
+  }, [activeTab, startDate, endDate, validity, loadSubscriptionsData, loadSubsStats]);
 
   // Загрузка отзывов
   const loadReviewsData = useCallback(async () => {
@@ -790,29 +788,11 @@ export default function UsersPage() {
                 </div>
                 <div className="flex flex-col gap-1 justify-end">
                   <button
-                    onClick={() => { setStartDate(''); setEndDate(''); setSubType(''); setValidity(''); }}
+                    onClick={() => { setStartDate(''); setEndDate(''); setValidity(''); }}
                     className="px-4 py-2 rounded-md border hover:bg-muted transition-colors"
                   >
                     Сбросить все
                   </button>
-                </div>
-              </div>
-
-              {/* Тип подписки */}
-              <div className="flex flex-col gap-2">
-                <span className="text-sm text-muted-foreground">Тип подписки</span>
-                <div className="flex flex-wrap gap-2">
-                  {([['', 'Все'], ['trial', 'Пробник (≤7 дней)'], ['regular', 'Основная']] as const).map(([val, label]) => (
-                    <button
-                      key={val}
-                      onClick={() => setSubType(val)}
-                      className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors border ${
-                        subType === val ? 'bg-primary text-primary-foreground border-primary' : 'hover:bg-muted border-transparent'
-                      }`}
-                    >
-                      {label}
-                    </button>
-                  ))}
                 </div>
               </div>
 
