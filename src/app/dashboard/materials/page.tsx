@@ -139,8 +139,8 @@ export default function MaterialsPage() {
         </div>
       )}
 
-      <div className="flex items-center justify-between gap-4 mb-4">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-4">
           <button
             className="btn-outline px-3 py-1 rounded hover:bg-accent transition-colors"
             onClick={() => router.back()}
@@ -149,7 +149,7 @@ export default function MaterialsPage() {
           </button>
           <h1 className="text-2xl font-bold">Материалы</h1>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={() => setIsCreateModalOpen(true)}
             className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
@@ -167,7 +167,7 @@ export default function MaterialsPage() {
         </div>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6">
         {loading && (
           <div className="col-span-full text-center py-8">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
@@ -192,10 +192,10 @@ export default function MaterialsPage() {
             >
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between gap-2">
-                  <CardTitle className="text-lg flex-1">
+                  <CardTitle className="text-lg flex-1 min-w-0">
                     {translation?.name || 'Без названия'}
                   </CardTitle>
-                  <div className="flex items-center gap-2">
+                  <div className="flex shrink-0 items-center gap-2">
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -221,7 +221,7 @@ export default function MaterialsPage() {
                         <Trash2 className="w-4 h-4" />
                       )}
                     </button>
-                    <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                    <div className="hidden sm:block p-2 rounded-lg bg-primary/10 text-primary">
                       <FileText className="w-5 h-5" />
                     </div>
                   </div>
@@ -328,17 +328,17 @@ function MaterialViewer({ material, langCode, onClose }: MaterialViewerProps) {
 
   return (
     <div 
-      className="fixed inset-0 bg-black/70 backdrop-blur-md z-[100] flex items-center justify-center p-4"
+      className="modal-overlay fixed inset-0 bg-black/70 backdrop-blur-md z-[100] flex items-center justify-center p-4"
       onClick={onClose}
     >
       <div 
-        className="bg-background rounded-lg shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden flex flex-col"
+        className="bg-background rounded-lg shadow-2xl max-w-6xl w-full max-h-[90dvh] overflow-hidden flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Заголовок */}
-        <div className="p-4 border-b flex items-center justify-between">
-          <div className="flex-1">
-            <h2 className="text-xl font-bold">{translation.name}</h2>
+        <div className="p-3 sm:p-4 border-b flex items-center justify-between">
+          <div className="flex-1 min-w-0">
+            <h2 className="text-lg sm:text-xl font-bold">{translation.name}</h2>
             <p className="text-sm text-muted-foreground mt-1">{translation.description}</p>
           </div>
           <button 
@@ -374,7 +374,7 @@ function MaterialViewer({ material, langCode, onClose }: MaterialViewerProps) {
         )}
 
         {/* Контент */}
-        <div className="flex-1 overflow-auto p-4">
+        <div className="flex-1 overflow-auto p-3 sm:p-4">
           <FileViewer 
             filePath={currentPath} 
             fileName={translation.name}
@@ -382,12 +382,12 @@ function MaterialViewer({ material, langCode, onClose }: MaterialViewerProps) {
         </div>
 
         {/* Футер с действиями */}
-        <div className="p-4 border-t bg-accent/5 flex items-center justify-between">
+        <div className="p-3 sm:p-4 border-t bg-accent/5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div className="text-sm text-muted-foreground">
             <span className="font-medium">Курс:</span> {material.course.number} • 
             <span className="font-medium ml-2">Семестр:</span> {material.semester.number}
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <a
               href={currentPath}
               download

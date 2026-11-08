@@ -80,8 +80,8 @@ export default function MaterialTypesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-4 mb-4">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-4">
           <button 
             className="btn-outline px-3 py-1 rounded hover:bg-accent transition-colors" 
             onClick={() => router.back()}
@@ -92,14 +92,14 @@ export default function MaterialTypesPage() {
         </div>
         <button
           onClick={() => setIsCreateModalOpen(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+          className="flex items-center justify-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
         >
           <Plus className="w-5 h-5" />
           Добавить материал
         </button>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6">
         {loading && (
           <div className="col-span-full text-center py-8">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
@@ -123,10 +123,10 @@ export default function MaterialTypesPage() {
             <Card className="card-hover animate-in border-2 transition-all hover:shadow-lg hover:scale-105 h-full">
               <CardHeader className="pb-3">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                  <div className="shrink-0 p-2 rounded-lg bg-primary/10 text-primary">
                     {getIconForMaterialType(materialType.name)}
                   </div>
-                  <CardTitle className="text-lg">{materialType.name}</CardTitle>
+                  <CardTitle className="min-w-0 text-lg">{materialType.name}</CardTitle>
                 </div>
               </CardHeader>
               <CardContent>

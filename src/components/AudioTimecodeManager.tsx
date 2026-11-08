@@ -223,7 +223,7 @@ export default function AudioTimecodeManager({
                     <input
                       value={editLabel}
                       onChange={(e) => setEditLabel(e.target.value)}
-                      className="flex-1 px-2 py-1 border rounded bg-background text-sm"
+                      className="flex-1 min-w-0 px-2 py-1 border rounded bg-background text-sm"
                       placeholder="Подпись"
                     />
                   </div>
@@ -304,7 +304,7 @@ export default function AudioTimecodeManager({
 
       {/* Форма добавления */}
       <div className="pt-3 border-t space-y-2">
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <input
             value={timeInput}
             onChange={(e) => setTimeInput(e.target.value)}
@@ -322,7 +322,7 @@ export default function AudioTimecodeManager({
           <input
             value={labelInput}
             onChange={(e) => setLabelInput(e.target.value)}
-            className="flex-1 px-2 py-1.5 border rounded bg-background text-sm"
+            className="w-full sm:w-auto sm:flex-1 min-w-0 px-2 py-1.5 border rounded bg-background text-sm"
             placeholder="Подпись (напр. «Введение»)"
           />
         </div>

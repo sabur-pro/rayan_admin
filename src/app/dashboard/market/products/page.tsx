@@ -190,12 +190,12 @@ export default function ProductsPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <button onClick={() => router.push('/dashboard/market')} className="p-2 hover:bg-muted rounded-lg transition-colors">
+        <div className="flex items-center gap-3 min-w-0">
+          <button onClick={() => router.push('/dashboard/market')} className="shrink-0 p-2 hover:bg-muted rounded-lg transition-colors">
             <ArrowLeft className="h-5 w-5" />
           </button>
           <div>
-            <h1 className="text-3xl font-bold flex items-center gap-3"><Package className="h-8 w-8" />{categoryName}</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-3"><Package className="h-8 w-8 shrink-0" /><span className="min-w-0">{categoryName}</span></h1>
             <p className="text-muted-foreground">{total} продуктов{categoryId ? ` в категории #${categoryId}` : ''}</p>
           </div>
         </div>
@@ -208,9 +208,9 @@ export default function ProductsPage() {
       {error && <div className="text-center py-12 text-destructive">{error}</div>}
       {!loading && !error && products.length === 0 && <div className="text-center py-12 text-muted-foreground"><Package className="h-12 w-12 mx-auto mb-4 opacity-50" />Продукты не найдены</div>}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-6">
         {products.map(p => (
-          <Card key={p.id} className={`overflow-hidden card-hover ${!p.is_active ? 'opacity-60' : ''}`}>
+          <Card key={p.id} className={`overflow-hidden card-hover py-0 gap-0 ${!p.is_active ? 'opacity-60' : ''}`}>
             <div className="aspect-square relative bg-muted">
               {p.images && p.images.length > 0 ? (
                 <img src={p.images[0]} alt={p.name} className="w-full h-full object-cover" />
@@ -221,30 +221,30 @@ export default function ProductsPage() {
                 <span className="absolute bottom-2 left-2 px-2 py-0.5 bg-black/60 text-white text-xs rounded-full">{p.images.length} фото</span>
               )}
               {!p.is_active && (
-                <span className="absolute top-2 left-2 px-2 py-1 bg-red-500 text-white text-xs rounded-full flex items-center gap-1"><EyeOff className="h-3 w-3" />Скрыт</span>
+                <span className="absolute bottom-2 right-2 md:bottom-auto md:right-auto md:top-2 md:left-2 px-2 py-1 bg-red-500 text-white text-xs rounded-full flex items-center gap-1"><EyeOff className="h-3 w-3" />Скрыт</span>
               )}
               <div className="absolute top-2 right-2 flex gap-1">
-                <button onClick={() => handleAddImages(p.id)} className="p-1.5 bg-black/60 hover:bg-black/80 text-white rounded-lg transition-colors"><ImagePlus className="h-3.5 w-3.5" /></button>
-                <button onClick={() => openEdit(p)} className="p-1.5 bg-black/60 hover:bg-black/80 text-white rounded-lg transition-colors"><Pencil className="h-3.5 w-3.5" /></button>
-                <button onClick={() => handleDelete(p.id)} disabled={deletingId === p.id} className="p-1.5 bg-red-500/90 hover:bg-red-600 text-white rounded-lg transition-colors disabled:opacity-50">
+                <button onClick={() => handleAddImages(p.id)} className="p-2 md:p-1.5 bg-black/60 hover:bg-black/80 text-white rounded-lg transition-colors"><ImagePlus className="h-3.5 w-3.5" /></button>
+                <button onClick={() => openEdit(p)} className="p-2 md:p-1.5 bg-black/60 hover:bg-black/80 text-white rounded-lg transition-colors"><Pencil className="h-3.5 w-3.5" /></button>
+                <button onClick={() => handleDelete(p.id)} disabled={deletingId === p.id} className="p-2 md:p-1.5 bg-red-500/90 hover:bg-red-600 text-white rounded-lg transition-colors disabled:opacity-50">
                   {deletingId === p.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
                 </button>
               </div>
             </div>
-            <CardContent className="p-4">
+            <CardContent className="p-3 md:p-4">
               <h3 className="font-semibold mb-1 truncate">{p.name}</h3>
               {p.tag && (
                 <span className="inline-block mb-2 px-2 py-0.5 bg-primary/10 text-primary text-xs rounded-full">{p.tag}</span>
               )}
-              <div className="flex items-baseline gap-2 mb-2">
+              <div className="flex flex-wrap items-baseline gap-x-2 mb-2">
                 <span className="text-lg font-bold text-primary">{p.price} c.</span>
                 <span className="text-xs text-muted-foreground line-through">{p.cost_price} c.</span>
               </div>
-              <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <div className="flex flex-wrap items-center justify-between gap-x-2 text-xs text-muted-foreground">
                 <span>Склад: {p.stock}</span>
                 <span>Приоритет: {p.priority}</span>
               </div>
-              <div className="flex items-center justify-between text-xs text-muted-foreground mt-1">
+              <div className="flex flex-wrap items-center justify-between gap-x-2 text-xs text-muted-foreground mt-1">
                 <span>Продавец: #{p.seller_id}</span>
                 {p.rating > 0 && <span>★ {p.rating.toFixed(1)}</span>}
               </div>
@@ -263,9 +263,9 @@ export default function ProductsPage() {
 
       {/* ===== CREATE MODAL ===== */}
       {showCreate && (
-        <div className="fixed inset-0 bg-black/70 z-[100] flex items-center justify-center p-4 overflow-y-auto" onClick={() => { setShowCreate(false); resetCreateForm(); }}>
-          <Card className="w-full max-w-xl animate-in my-8" onClick={e => e.stopPropagation()}>
-            <CardContent className="p-6">
+        <div className="modal-overlay fixed inset-0 bg-black/70 z-[100] flex items-center justify-center p-4 overflow-y-auto" onClick={() => { setShowCreate(false); resetCreateForm(); }}>
+          <Card className="w-full max-w-xl animate-in" onClick={e => e.stopPropagation()}>
+            <CardContent className="p-4 sm:p-6">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-semibold">Новый продукт</h2>
                 <button onClick={() => { setShowCreate(false); resetCreateForm(); }} className="text-muted-foreground hover:text-foreground"><X className="h-5 w-5" /></button>
@@ -273,13 +273,13 @@ export default function ProductsPage() {
               <div className="space-y-4">
                 <div><label className="text-sm font-medium mb-1 block">Название *</label><Input value={cName} onChange={e => setCName(e.target.value)} placeholder="Название продукта" /></div>
                 <div><label className="text-sm font-medium mb-1 block">Описание</label><textarea value={cDesc} onChange={e => setCDesc(e.target.value)} placeholder="Описание" className="w-full px-3 py-2 rounded-md border bg-transparent focus:outline-none focus:ring-2 focus:ring-primary min-h-[80px]" /></div>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   <div><label className="text-sm font-medium mb-1 block">Себестоимость *</label><Input type="number" step="0.01" value={cCost} onChange={e => setCCost(e.target.value)} /></div>
                   <div><label className="text-sm font-medium mb-1 block">Цена *</label><Input type="number" step="0.01" value={cPrice} onChange={e => setCPrice(e.target.value)} /></div>
                   <div><label className="text-sm font-medium mb-1 block">Склад</label><Input type="number" value={cStock} onChange={e => setCStock(e.target.value)} /></div>
                 </div>
                 <div><label className="text-sm font-medium mb-1 block">Тег (категория для фильтра)</label><Input value={cTag} onChange={e => setCTag(e.target.value)} placeholder="например: Халаты, Шапки" /></div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div><label className="text-sm font-medium mb-1 block">Приоритет</label><Input type="number" value={cPriority} onChange={e => setCPriority(e.target.value)} placeholder="0" /></div>
                   {role === 'admin' && (
                     <div>
@@ -323,9 +323,9 @@ export default function ProductsPage() {
 
       {/* ===== EDIT MODAL ===== */}
       {editingProduct && (
-        <div className="fixed inset-0 bg-black/70 z-[100] flex items-center justify-center p-4 overflow-y-auto" onClick={() => setEditingProduct(null)}>
-          <Card className="w-full max-w-xl animate-in my-8" onClick={e => e.stopPropagation()}>
-            <CardContent className="p-6">
+        <div className="modal-overlay fixed inset-0 bg-black/70 z-[100] flex items-center justify-center p-4 overflow-y-auto" onClick={() => setEditingProduct(null)}>
+          <Card className="w-full max-w-xl animate-in" onClick={e => e.stopPropagation()}>
+            <CardContent className="p-4 sm:p-6">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-semibold">Редактировать #{editingProduct.id}</h2>
                 <button onClick={() => setEditingProduct(null)} className="text-muted-foreground hover:text-foreground"><X className="h-5 w-5" /></button>
@@ -340,13 +340,13 @@ export default function ProductsPage() {
                 )}
                 <div><label className="text-sm font-medium mb-1 block">Название</label><Input value={eName} onChange={e => setEName(e.target.value)} /></div>
                 <div><label className="text-sm font-medium mb-1 block">Описание</label><textarea value={eDesc} onChange={e => setEDesc(e.target.value)} className="w-full px-3 py-2 rounded-md border bg-transparent focus:outline-none focus:ring-2 focus:ring-primary min-h-[80px]" /></div>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   <div><label className="text-sm font-medium mb-1 block">Себестоимость</label><Input type="number" step="0.01" value={eCost} onChange={e => setECost(e.target.value)} /></div>
                   <div><label className="text-sm font-medium mb-1 block">Цена</label><Input type="number" step="0.01" value={ePrice} onChange={e => setEPrice(e.target.value)} /></div>
                   <div><label className="text-sm font-medium mb-1 block">Склад</label><Input type="number" value={eStock} onChange={e => setEStock(e.target.value)} /></div>
                 </div>
                 <div><label className="text-sm font-medium mb-1 block">Тег (категория для фильтра)</label><Input value={eTag} onChange={e => setETag(e.target.value)} placeholder="например: Халаты, Шапки" /></div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div><label className="text-sm font-medium mb-1 block">Приоритет</label><Input type="number" value={ePriority} onChange={e => setEPriority(e.target.value)} /></div>
                   <div className="flex items-end">
                     <label className="flex items-center gap-3 cursor-pointer pb-2">

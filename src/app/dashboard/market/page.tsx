@@ -249,10 +249,10 @@ export default function MarketPage() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold mb-2 flex items-center gap-3"><ShoppingBag className="h-8 w-8" />Магазин</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold mb-2 flex items-center gap-3"><ShoppingBag className="h-8 w-8" />Магазин</h1>
           <p className="text-muted-foreground">Управление баннерами, категориями и продавцами</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           <Button className="btn-outline" variant="outline" onClick={() => router.push('/dashboard/market/orders')}><ClipboardList className="mr-2 h-4 w-4" />Заказы</Button>
           {role === 'admin' && <Button className="btn-outline" variant="outline" onClick={() => router.push('/dashboard/market/sellers')}><Users className="mr-2 h-4 w-4" />Продавцы</Button>}
           {activeTab === 'banners' && canCreate && <Button className="btn-primary" onClick={() => setShowBannerModal(true)}><Plus className="mr-2 h-4 w-4" />Добавить баннер</Button>}
@@ -271,9 +271,9 @@ export default function MarketPage() {
           {bannerLoading && <div className="text-center py-12 text-muted-foreground">Загрузка...</div>}
           {bannerError && <div className="text-center py-12 text-destructive">{bannerError}</div>}
           {!bannerLoading && !bannerError && banners.length === 0 && <div className="text-center py-12 text-muted-foreground"><Image className="h-12 w-12 mx-auto mb-4 opacity-50" />Баннеры не найдены</div>}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6">
             {banners.map((b) => (
-              <Card key={b.id} className="overflow-hidden card-hover">
+              <Card key={b.id} className="overflow-hidden card-hover py-0 gap-0">
                 <div className="aspect-video relative bg-muted">
                   <img src={b.image_path} alt={b.description || 'Баннер'} className="w-full h-full object-cover" />
                   <div className="absolute top-2 right-2 flex gap-1">
@@ -306,9 +306,9 @@ export default function MarketPage() {
           {catLoading && <div className="text-center py-12 text-muted-foreground">Загрузка...</div>}
           {catError && <div className="text-center py-12 text-destructive">{catError}</div>}
           {!catLoading && !catError && categories.length === 0 && <div className="text-center py-12 text-muted-foreground"><LayoutGrid className="h-12 w-12 mx-auto mb-4 opacity-50" />Категории не найдены</div>}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6">
             {categories.map((cat) => (
-              <Card key={cat.id} className="overflow-hidden card-hover cursor-pointer" onClick={() => router.push(`/dashboard/market/products?category_id=${cat.id}&name=${encodeURIComponent(cat.name)}`)}>
+              <Card key={cat.id} className="overflow-hidden card-hover cursor-pointer py-0 gap-0" onClick={() => router.push(`/dashboard/market/products?category_id=${cat.id}&name=${encodeURIComponent(cat.name)}`)}>
                 <div className="aspect-video relative bg-muted">
                   <img src={cat.image_path} alt={cat.name} className="w-full h-full object-cover" />
                   {role === 'admin' && (
@@ -346,9 +346,9 @@ export default function MarketPage() {
 
       {/* BANNER CREATE MODAL */}
       {showBannerModal && (
-        <div className="fixed inset-0 bg-black/70 z-[100] flex items-center justify-center p-4 overflow-y-auto" onClick={() => { setShowBannerModal(false); resetBannerForm(); }}>
-          <Card className="w-full max-w-lg animate-in my-8" onClick={e => e.stopPropagation()}>
-            <CardContent className="p-6">
+        <div className="modal-overlay fixed inset-0 bg-black/70 z-[100] flex items-center justify-center p-4 overflow-y-auto" onClick={() => { setShowBannerModal(false); resetBannerForm(); }}>
+          <Card className="w-full max-w-lg animate-in" onClick={e => e.stopPropagation()}>
+            <CardContent className="p-4 sm:p-6">
               <div className="flex items-center justify-between mb-6"><h2 className="text-xl font-semibold">Новый баннер</h2><button onClick={() => { setShowBannerModal(false); resetBannerForm(); }} className="text-muted-foreground hover:text-foreground"><X className="h-5 w-5" /></button></div>
               <div className="space-y-4">
                 <div>
@@ -373,9 +373,9 @@ export default function MarketPage() {
 
       {/* BANNER EDIT MODAL */}
       {editingBanner && (
-        <div className="fixed inset-0 bg-black/70 z-[100] flex items-center justify-center p-4 overflow-y-auto" onClick={() => setEditingBanner(null)}>
-          <Card className="w-full max-w-lg animate-in my-8" onClick={e => e.stopPropagation()}>
-            <CardContent className="p-6">
+        <div className="modal-overlay fixed inset-0 bg-black/70 z-[100] flex items-center justify-center p-4 overflow-y-auto" onClick={() => setEditingBanner(null)}>
+          <Card className="w-full max-w-lg animate-in" onClick={e => e.stopPropagation()}>
+            <CardContent className="p-4 sm:p-6">
               <div className="flex items-center justify-between mb-6"><h2 className="text-xl font-semibold">Редактировать баннер #{editingBanner.id}</h2><button onClick={() => setEditingBanner(null)} className="text-muted-foreground hover:text-foreground"><X className="h-5 w-5" /></button></div>
               <div className="space-y-4">
                 <div className="aspect-video rounded-lg overflow-hidden bg-muted"><img src={editingBanner.image_path} alt="Баннер" className="w-full h-full object-cover" /></div>
@@ -393,9 +393,9 @@ export default function MarketPage() {
 
       {/* CATEGORY CREATE MODAL */}
       {showCatModal && (
-        <div className="fixed inset-0 bg-black/70 z-[100] flex items-center justify-center p-4 overflow-y-auto" onClick={() => { setShowCatModal(false); resetCatForm(); }}>
-          <Card className="w-full max-w-lg animate-in my-8" onClick={e => e.stopPropagation()}>
-            <CardContent className="p-6">
+        <div className="modal-overlay fixed inset-0 bg-black/70 z-[100] flex items-center justify-center p-4 overflow-y-auto" onClick={() => { setShowCatModal(false); resetCatForm(); }}>
+          <Card className="w-full max-w-lg animate-in" onClick={e => e.stopPropagation()}>
+            <CardContent className="p-4 sm:p-6">
               <div className="flex items-center justify-between mb-6"><h2 className="text-xl font-semibold">Новая категория</h2><button onClick={() => { setShowCatModal(false); resetCatForm(); }} className="text-muted-foreground hover:text-foreground"><X className="h-5 w-5" /></button></div>
               <div className="space-y-4">
                 <div>
@@ -422,9 +422,9 @@ export default function MarketPage() {
 
       {/* CATEGORY EDIT MODAL */}
       {editingCat && (
-        <div className="fixed inset-0 bg-black/70 z-[100] flex items-center justify-center p-4 overflow-y-auto" onClick={() => setEditingCat(null)}>
-          <Card className="w-full max-w-lg animate-in my-8" onClick={e => e.stopPropagation()}>
-            <CardContent className="p-6">
+        <div className="modal-overlay fixed inset-0 bg-black/70 z-[100] flex items-center justify-center p-4 overflow-y-auto" onClick={() => setEditingCat(null)}>
+          <Card className="w-full max-w-lg animate-in" onClick={e => e.stopPropagation()}>
+            <CardContent className="p-4 sm:p-6">
               <div className="flex items-center justify-between mb-6"><h2 className="text-xl font-semibold">Редактировать категорию #{editingCat.id}</h2><button onClick={() => setEditingCat(null)} className="text-muted-foreground hover:text-foreground"><X className="h-5 w-5" /></button></div>
               <div className="space-y-4">
                 <div className="aspect-video rounded-lg overflow-hidden bg-muted"><img src={editingCat.image_path} alt={editingCat.name} className="w-full h-full object-cover" /></div>

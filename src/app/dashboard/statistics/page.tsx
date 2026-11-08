@@ -203,6 +203,24 @@ export default function FinancesPage() {
 
   const totalShare = founders.reduce((sum, f) => sum + f.share, 0);
 
+  const renderTransactionAction = (t: FinanceTransaction) =>
+    t.locked ? (
+      <span
+        className="inline-flex items-center gap-1 text-xs text-muted-foreground"
+        title="Авто-запись (магазин/подписка). Удаление недоступно."
+      >
+        <Lock className="h-3.5 w-3.5" />
+      </span>
+    ) : (
+      <button
+        onClick={() => handleDeleteTransaction(t)}
+        className="p-2 rounded-lg hover:bg-red-500/10 text-red-500 transition-colors"
+        title="Удалить"
+      >
+        <Trash2 className="h-4 w-4" />
+      </button>
+    );
+
   if (loading && !stats) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -216,7 +234,7 @@ export default function FinancesPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold mb-2">Финансы</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold mb-2">Финансы</h1>
           <p className="text-muted-foreground">Доходы, расходы, налоги и доли основателей</p>
         </div>
         <div className="flex items-center gap-3 flex-wrap">
@@ -244,7 +262,7 @@ export default function FinancesPage() {
       )}
 
       {/* Tabs */}
-      <div className="flex items-center gap-2 bg-muted/50 p-1 rounded-lg w-fit flex-wrap">
+      <div className="flex items-center gap-1 sm:gap-2 bg-muted/50 p-1 rounded-lg w-full sm:w-fit overflow-x-auto">
         {([
           ['overview', 'Обзор'],
           ['transactions', `Транзакции`],
@@ -253,7 +271,7 @@ export default function FinancesPage() {
           <button
             key={key}
             onClick={() => setActiveTab(key)}
-            className={`px-4 py-2 rounded-md transition-colors ${
+            className={`flex-1 sm:flex-none whitespace-nowrap px-2.5 sm:px-4 py-2 rounded-md text-sm sm:text-base transition-colors ${
               activeTab === key ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
             }`}
           >
@@ -318,19 +336,19 @@ export default function FinancesPage() {
 
               <div className="hidden md:block w-px h-8 bg-border" />
 
-              <div className="flex items-center gap-2">
+              <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:items-center">
                 <input
                   type="date"
                   value={dateFrom}
                   onChange={(e) => setDateFrom(e.target.value)}
-                  className="px-3 py-2 rounded-lg border bg-transparent text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="w-full sm:w-auto px-2 sm:px-3 py-2 rounded-lg border bg-transparent text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                 />
-                <ArrowUpRight className="h-4 w-4 text-muted-foreground rotate-45" />
+                <ArrowUpRight className="hidden sm:block h-4 w-4 text-muted-foreground rotate-45" />
                 <input
                   type="date"
                   value={dateTo}
                   onChange={(e) => setDateTo(e.target.value)}
-                  className="px-3 py-2 rounded-lg border bg-transparent text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="w-full sm:w-auto px-2 sm:px-3 py-2 rounded-lg border bg-transparent text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                 />
               </div>
 
@@ -351,7 +369,7 @@ export default function FinancesPage() {
       {/* ===================== OVERVIEW ===================== */}
       {activeTab === 'overview' && stats && (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             <StatCard
               title="Общий доход"
               value={fmtMoney(stats.total_income)}
@@ -423,17 +441,17 @@ export default function FinancesPage() {
           {/* Tax by month */}
           <Card className="glass border-2 border-primary/40">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Receipt className="h-5 w-5" />
+              <CardTitle className="flex items-start gap-2 leading-snug">
+                <Receipt className="h-5 w-5 shrink-0" />
                 Налог по месяцам (202 c + 6% от оборота; при обороте {'>'} 20200 — 7% без фикс. части)
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="max-md:px-0">
               {(stats.tax.months?.length ?? 0) === 0 ? (
                 <div className="text-center py-6 text-muted-foreground text-sm">Нет оборота за период</div>
               ) : (
                 <div className="overflow-x-auto">
-                  <table className="w-full">
+                  <table className="w-full mobile-cards">
                     <thead className="bg-muted/50">
                       <tr>
                         <th className="px-4 py-3 text-left text-sm font-medium">Месяц</th>
@@ -448,17 +466,17 @@ export default function FinancesPage() {
                     <tbody className="divide-y">
                       {(stats.tax.months ?? []).map((m) => (
                         <tr key={m.month} className="hover:bg-muted/30 transition-colors">
-                          <td className="px-4 py-3 text-sm font-medium">{monthLabelRu(m.month)}</td>
-                          <td className="px-4 py-3 text-sm">{fmtMoney(m.turnover)}</td>
-                          <td className="px-4 py-3 text-sm">
+                          <td data-label="Месяц" className="px-4 py-3 text-sm font-medium">{monthLabelRu(m.month)}</td>
+                          <td data-label="Оборот" className="px-4 py-3 text-sm">{fmtMoney(m.turnover)}</td>
+                          <td data-label="Ставка" className="px-4 py-3 text-sm">
                             {(m.rate * 100).toFixed(0)}%{m.fixed > 0 ? ` + ${m.fixed} c` : ''}
                           </td>
-                          <td className="px-4 py-3 text-sm">{fmtMoney(m.computed)}</td>
-                          <td className="px-4 py-3 text-sm text-green-600">{fmtMoney(m.paid)}</td>
-                          <td className="px-4 py-3 text-sm font-semibold text-yellow-600">
+                          <td data-label="Начислено" className="px-4 py-3 text-sm">{fmtMoney(m.computed)}</td>
+                          <td data-label="Оплачено" className="px-4 py-3 text-sm text-green-600">{fmtMoney(m.paid)}</td>
+                          <td data-label="К оплате" className="px-4 py-3 text-sm font-semibold text-yellow-600">
                             {fmtMoney(m.remaining)}
                           </td>
-                          <td className="px-4 py-3">
+                          <td data-label="Действие" className="px-4 py-3">
                             {m.remaining > 0 ? (
                               <button
                                 onClick={() => handleRecordTax(m.month)}
@@ -475,9 +493,9 @@ export default function FinancesPage() {
                       <tr className="bg-muted/50 font-bold">
                         <td className="px-4 py-3 text-sm">ИТОГО</td>
                         <td className="px-4 py-3 text-sm" colSpan={2}></td>
-                        <td className="px-4 py-3 text-sm">{fmtMoney(stats.tax.computed)}</td>
-                        <td className="px-4 py-3 text-sm text-green-600">{fmtMoney(stats.tax.paid)}</td>
-                        <td className="px-4 py-3 text-sm text-yellow-600">{fmtMoney(stats.tax.remaining)}</td>
+                        <td data-label="Начислено" className="px-4 py-3 text-sm">{fmtMoney(stats.tax.computed)}</td>
+                        <td data-label="Оплачено" className="px-4 py-3 text-sm text-green-600">{fmtMoney(stats.tax.paid)}</td>
+                        <td data-label="К оплате" className="px-4 py-3 text-sm text-yellow-600">{fmtMoney(stats.tax.remaining)}</td>
                         <td></td>
                       </tr>
                     </tbody>
@@ -513,7 +531,36 @@ export default function FinancesPage() {
             {transactions.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">Нет транзакций</div>
             ) : (
-              <div className="overflow-x-auto">
+              <>
+              <div className="space-y-2 md:hidden">
+                {transactions.map((t) => (
+                  <div key={t.id} className="rounded-lg border p-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium">{categoryLabel(t)}</p>
+                        {t.description && (
+                          <p className="mt-0.5 text-xs text-muted-foreground">{t.description}</p>
+                        )}
+                      </div>
+                      <span
+                        className={`shrink-0 text-sm font-semibold ${
+                          t.type === 'income' ? 'text-green-500' : 'text-red-500'
+                        }`}
+                      >
+                        {t.type === 'income' ? '+' : '-'}
+                        {fmtMoney(t.amount)}
+                      </span>
+                    </div>
+                    <div className="mt-1 flex min-h-9 items-center justify-between gap-3">
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(t.occurred_at).toLocaleDateString('ru-RU')}
+                      </span>
+                      {renderTransactionAction(t)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="hidden overflow-x-auto md:block">
                 <table className="w-full">
                   <thead className="bg-muted/50">
                     <tr>
@@ -557,29 +604,13 @@ export default function FinancesPage() {
                         <td className="px-4 py-3 text-sm text-muted-foreground">
                           {new Date(t.occurred_at).toLocaleDateString('ru-RU')}
                         </td>
-                        <td className="px-4 py-3">
-                          {t.locked ? (
-                            <span
-                              className="inline-flex items-center gap-1 text-xs text-muted-foreground"
-                              title="Авто-запись (магазин/подписка). Удаление недоступно."
-                            >
-                              <Lock className="h-3.5 w-3.5" />
-                            </span>
-                          ) : (
-                            <button
-                              onClick={() => handleDeleteTransaction(t)}
-                              className="p-2 rounded-lg hover:bg-red-500/10 text-red-500 transition-colors"
-                              title="Удалить"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
-                          )}
-                        </td>
+                        <td className="px-4 py-3">{renderTransactionAction(t)}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
+              </>
             )}
           </CardContent>
         </Card>
@@ -602,7 +633,7 @@ export default function FinancesPage() {
                 setEditingFounder(null);
                 setShowFounderModal(true);
               }}
-              className="flex items-center gap-2 px-4 py-2 rounded-md bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
+              className="flex w-full sm:w-auto items-center justify-center gap-2 px-4 py-2 rounded-md bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
             >
               <UserPlus className="h-4 w-4" />
               Добавить основателя
@@ -618,12 +649,12 @@ export default function FinancesPage() {
               </CardContent>
             </Card>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-6">
               {founders.map((f) => (
                 <Card key={f.id} className="glass border-l-4 border-l-primary">
-                  <CardContent className="p-6">
-                    <div className="flex items-start justify-between mb-4">
-                      <div>
+                  <CardContent className="p-4 sm:p-6">
+                    <div className="flex items-start justify-between gap-2 mb-4">
+                      <div className="min-w-0">
                         <h3 className="text-lg font-semibold">{f.name}</h3>
                         <p className="text-sm text-muted-foreground">Доля: {f.share}%</p>
                       </div>
@@ -722,13 +753,13 @@ function StatCard({
 
   return (
     <Card className={`glass border-l-4 ${border}`}>
-      <CardContent className="p-6">
-        <div className="flex items-center justify-between">
-          <div>
+      <CardContent className="p-4 sm:p-6">
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
             <p className="text-sm text-muted-foreground mb-1">{title}</p>
-            <p className={`text-2xl font-bold ${text}`}>{value}</p>
+            <p className={`text-xl sm:text-2xl font-bold ${text}`}>{value}</p>
           </div>
-          <div className={`h-12 w-12 rounded-full ${bg} flex items-center justify-center`}>{icon}</div>
+          <div className={`h-10 w-10 sm:h-12 sm:w-12 shrink-0 rounded-full ${bg} flex items-center justify-center`}>{icon}</div>
         </div>
         {sub && <div className="mt-3 text-xs text-muted-foreground">{sub}</div>}
       </CardContent>

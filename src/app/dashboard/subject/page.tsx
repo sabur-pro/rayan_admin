@@ -122,8 +122,8 @@ export default function SubjectPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-4">
           <button className="btn-outline px-3 py-1 rounded" onClick={() => router.back()}>
             ← Назад
           </button>
@@ -136,7 +136,7 @@ export default function SubjectPage() {
           + Добавить предмет
         </button>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6">
         {loading && <div className="col-span-full text-center">Загрузка...</div>}
         {error && <div className="col-span-full text-center text-destructive">{error}</div>}
         {subjects.map((subj) => {

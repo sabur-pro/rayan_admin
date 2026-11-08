@@ -121,11 +121,11 @@ export default function CreateMaterialModal({
 
   return (
     <div
-      className="fixed inset-0 bg-black/70 backdrop-blur-md z-[100] flex items-center justify-center p-4"
+      className="modal-overlay fixed inset-0 bg-black/70 backdrop-blur-md z-[100] flex items-center justify-center p-4"
       onClick={handleClose}
     >
       <Card
-        className="w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col"
+        className="w-full max-w-2xl max-h-[90dvh] overflow-hidden flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         <CardHeader className="border-b">
@@ -141,7 +141,7 @@ export default function CreateMaterialModal({
           </div>
         </CardHeader>
 
-        <CardContent className="flex-1 overflow-auto p-6">
+        <CardContent className="flex-1 overflow-auto p-4 sm:p-6">
           {error && (
             <div className="mb-4 p-3 bg-destructive/10 border border-destructive/20 rounded-lg text-destructive text-sm">
               {error}

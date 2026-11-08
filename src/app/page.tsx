@@ -9,7 +9,7 @@ export default function HomePage() {
           <div className="h-16 w-16 rounded-full bg-primary flex items-center justify-center mx-auto mb-4">
             <span className="text-primary-foreground font-bold text-2xl">R</span>
           </div>
-          <h1 className="text-3xl font-bold mb-2 text-foreground">Rayan Admin</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold mb-2 text-foreground">Rayan Admin</h1>
           <p className="text-muted-foreground">Панель управления для администратора</p>
         </div>
         

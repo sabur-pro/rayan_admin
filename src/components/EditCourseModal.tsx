@@ -76,8 +76,8 @@ export default function EditCourseModal({ isOpen, onClose, course, onUpdated }: 
   if (!isOpen || !course) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-card rounded-lg p-6 w-full max-w-md">
+    <div className="modal-overlay fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-card rounded-lg p-4 sm:p-6 w-full max-w-md">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold">Редактировать курс #{course.number}</h2>
           <button

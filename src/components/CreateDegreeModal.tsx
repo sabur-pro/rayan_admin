@@ -88,13 +88,13 @@ export default function CreateDegreeModal({ isOpen, onClose, onCreated }: Props)
     <div
       role="dialog"
       aria-modal="true"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      className="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4"
     >
       <div className="absolute inset-0 bg-black/40" onClick={() => !submitting && onClose()} />
 
       <form
         onSubmit={handleSubmit}
-        className="relative z-10 w-full max-w-2xl glass p-6 rounded-2xl border shadow-lg"
+        className="relative z-10 w-full max-w-2xl bg-card text-card-foreground p-4 sm:p-6 rounded-2xl border shadow-lg"
       >
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold">Добавить уровень</h2>

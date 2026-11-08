@@ -157,12 +157,12 @@ export default function FacultiesPage(): JSX.Element {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold mb-2">Факультеты</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold mb-2">Факультеты</h1>
           <p className="text-muted-foreground">Управление факультетами в системе</p>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 bg-card p-2 rounded-md glass">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+          <div className="flex items-center justify-between gap-2 bg-card p-2 rounded-md glass">
             <label htmlFor="lang-select" className="text-sm mr-2 text-muted-foreground">
               Язык:
             </label>
@@ -180,7 +180,7 @@ export default function FacultiesPage(): JSX.Element {
             </select>
           </div>
 
-          <div className="flex items-center gap-2 bg-card p-2 rounded-md glass">
+          <div className="flex items-center justify-between gap-2 bg-card p-2 rounded-md glass">
             <label htmlFor="limit-select" className="text-sm mr-2 text-muted-foreground">
               На странице:
             </label>
@@ -213,7 +213,7 @@ export default function FacultiesPage(): JSX.Element {
 
       {/* --- Факультеты --- */}
       {!selectedFaculty && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6">
           {items.length === 0 && !loading && !error && (
             <div className="col-span-full text-center text-muted-foreground">Нет данных для выбранного языка.</div>
           )}
@@ -229,8 +229,8 @@ export default function FacultiesPage(): JSX.Element {
                 }}
               >
                 <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <div>
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="min-w-0">
                       <CardTitle className="text-lg">{translation.name}</CardTitle>
                     </div>
                     <Building2 className="h-6 w-6 text-primary" />
@@ -272,7 +272,7 @@ export default function FacultiesPage(): JSX.Element {
       {/* --- Курсы --- */}
       {selectedFaculty && !selectedCourse && (
         <div>
-          <div className="mb-4 flex items-center gap-4">
+          <div className="mb-4 flex flex-wrap items-center gap-2 sm:gap-4">
             <button
               className="btn-outline px-3 py-1 rounded"
               onClick={() => setSelectedFaculty(null)}
@@ -281,7 +281,7 @@ export default function FacultiesPage(): JSX.Element {
             </button>
             <h2 className="text-xl font-bold">Курсы факультета</h2>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6">
             {coursesLoading && <div className="col-span-full text-center">Загрузка курсов...</div>}
             {coursesError && <div className="col-span-full text-center text-destructive">{coursesError}</div>}
             {courses.map((c) => {
@@ -317,7 +317,7 @@ export default function FacultiesPage(): JSX.Element {
       {/* --- Семестры --- */}
       {selectedFaculty && selectedCourse && !selectedSemester && (
         <div>
-          <div className="mb-4 flex items-center gap-4">
+          <div className="mb-4 flex flex-wrap items-center gap-2 sm:gap-4">
             <button
               className="btn-outline px-3 py-1 rounded"
               onClick={() => setSelectedCourse(null)}
@@ -326,7 +326,7 @@ export default function FacultiesPage(): JSX.Element {
             </button>
             <h2 className="text-xl font-bold">Семестры курса</h2>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6">
             {semestersLoading && <div className="col-span-full text-center">Загрузка семестров...</div>}
             {semestersError && <div className="col-span-full text-center text-destructive">{semestersError}</div>}
             {semesters.map((s) => (
@@ -367,11 +367,11 @@ export default function FacultiesPage(): JSX.Element {
 
       {/* Пагинация факультетов только на первом экране */}
       {!selectedFaculty && (
-        <div className="flex items-center justify-between mt-4">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mt-4">
           <div className="text-sm text-muted-foreground">
             Страница 1 из {totalPages}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center justify-center gap-2">
             <button
               onClick={() => {}}
               disabled={true}
@@ -550,8 +550,8 @@ function SubjectsBlock({ facultyId, courseId, semesterId, langCode, onBack }: {
 
   return (
     <div>
-      <div className="mb-4 flex items-center justify-between">
-        <div className="flex items-center gap-4">
+      <div className="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-4">
           <button className="btn-outline px-3 py-1 rounded" onClick={onBack}>
             ← Назад к семестрам
           </button>
@@ -564,7 +564,7 @@ function SubjectsBlock({ facultyId, courseId, semesterId, langCode, onBack }: {
           + Добавить предмет
         </button>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6">
         {loading && <div className="col-span-full text-center">Загрузка...</div>}
         {error && <div className="col-span-full text-center text-destructive">{error}</div>}
         {subjects.map((subj) => {

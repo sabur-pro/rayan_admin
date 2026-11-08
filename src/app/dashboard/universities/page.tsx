@@ -135,12 +135,12 @@ export default function UniversitiesPage(): JSX.Element {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold mb-2">Университеты</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold mb-2">Университеты</h1>
           <p className="text-muted-foreground">Управление университетами в системе</p>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 bg-card p-2 rounded-md glass">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+          <div className="flex items-center justify-between gap-2 bg-card p-2 rounded-md glass">
             <label htmlFor="lang-select" className="text-sm mr-2 text-muted-foreground">
               Язык:
             </label>
@@ -158,7 +158,7 @@ export default function UniversitiesPage(): JSX.Element {
             </select>
           </div>
 
-          <div className="flex items-center gap-2 bg-card p-2 rounded-md glass">
+          <div className="flex items-center justify-between gap-2 bg-card p-2 rounded-md glass">
             <label htmlFor="limit-select" className="text-sm mr-2 text-muted-foreground">
               На странице:
             </label>
@@ -191,7 +191,7 @@ export default function UniversitiesPage(): JSX.Element {
       </div>
 
       {/* Карточки */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6">
         {items.length === 0 && !loading && !error && (
           <div className="col-span-full text-center text-muted-foreground">Нет данных для выбранного языка.</div>
         )}
@@ -203,8 +203,8 @@ export default function UniversitiesPage(): JSX.Element {
             onClick={() => u.university_id && handleUniversityClick(u.university_id)}
           >
             <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <div>
+              <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0">
                   <CardTitle className="text-lg">{u.name}</CardTitle>
                   {/* <div className="text-sm text-muted-foreground mt-1">{u.lang_code.toUpperCase()}</div> */}
                 </div>
@@ -247,12 +247,12 @@ export default function UniversitiesPage(): JSX.Element {
       </div>
 
       {/* Пагинация */}
-      <div className="flex items-center justify-between mt-4">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mt-4">
         <div className="text-sm text-muted-foreground">
           Страница {page} из {totalPages}
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-center gap-2">
           <button
             onClick={() => setPage(1)}
             disabled={page === 1}

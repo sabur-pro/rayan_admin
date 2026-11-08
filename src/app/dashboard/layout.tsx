@@ -16,10 +16,10 @@ export default async function DashboardLayout({
   }
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex min-h-screen flex-col bg-background lg:flex-row">
       <Sidebar />
-      <main className="flex-1 p-6 overflow-auto">
-        <div className="glass rounded-xl p-6 min-h-full">
+      <main className="min-w-0 flex-1 lg:p-6">
+        <div className="content-panel min-h-full p-3 sm:p-4 lg:rounded-xl lg:p-6">
           {children}
         </div>
       </main>

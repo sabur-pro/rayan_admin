@@ -98,7 +98,7 @@ export default function CourseList() {
 
   return (
     <div className="mt-8">
-      <div className="flex justify-between items-center mb-4">
+      <div className="flex flex-wrap justify-between items-center gap-3 mb-4">
         <h2 className="text-2xl font-semibold">Список курсов</h2>
         <button
           onClick={() => setCreateModalOpen(true)}
@@ -182,7 +182,7 @@ export default function CourseList() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {courses.map((course) => (
               <div key={course.id} className="p-4 border rounded-lg bg-card hover:shadow-md transition-shadow">
-                <div className="flex justify-between items-start mb-2">
+                <div className="flex justify-between items-start gap-2 mb-2">
                   <h3 className="text-lg font-semibold">Курс #{course.number}</h3>
                   <div className="flex gap-2">
                     <button
@@ -228,7 +228,7 @@ export default function CourseList() {
 
           {/* Пагинация */}
           {totalPages > 1 && (
-            <div className="flex justify-center items-center gap-2 mt-6">
+            <div className="flex flex-wrap justify-center items-center gap-2 mt-6">
               <button
                 onClick={() => handlePageChange(page - 1)}
                 disabled={page === 1}

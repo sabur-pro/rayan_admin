@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@config "../../tailwind.config.js";
 
 :root {
   --primary: #10b981;
@@ -21,6 +22,9 @@
   --input: #e5e7eb;
   --ring: #10b981;
   --radius: 0.5rem;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
+  --card-spacing: 1.5rem;
 }
 
 .dark {
@@ -89,9 +93,11 @@ body {
   transition: all 0.3s ease;
 }
 
-.card-hover:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+@media (hover: hover) {
+  .card-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+  }
 }
 
 .btn-primary {
@@ -99,10 +105,12 @@ body {
   transition: all 0.3s ease;
 }
 
-.btn-primary:hover {
-  background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary) 100%);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+@media (hover: hover) {
+  .btn-primary:hover {
+    background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary) 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  }
 }
 
 .btn-outline {
@@ -113,4 +121,188 @@ body {
 .btn-outline:hover {
   border-color: var(--primary);
   color: var(--primary);
+}
+
+/* Каркас. Здесь нельзя использовать backdrop-filter: он делает блок containing
+   block для position: fixed, и модалки внутри центрируются по всей странице,
+   а не по экрану. */
+.sidebar-panel {
+  background: var(--card);
+}
+
+@media (min-width: 1024px) {
+  .sidebar-panel {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+
+  .dark .sidebar-panel {
+    background: rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .content-panel {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+
+  .dark .content-panel {
+    background: rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+}
+
+/* Оверлей модалки: окно по центру, а если не влезает — прокручивается целиком,
+   не обрезаясь сверху (как при align-items: center). */
+.modal-overlay {
+  align-items: flex-start;
+  overflow-y: auto;
+  padding: 1rem;
+}
+
+.modal-overlay > * {
+  margin-block: auto;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+.dark {
+  color-scheme: dark;
+}
+
+.dark .rich-editor .ql-stroke {
+  stroke: var(--foreground);
+}
+
+.dark .rich-editor .ql-fill {
+  fill: var(--foreground);
+}
+
+.dark .rich-editor .ql-picker-label {
+  color: var(--foreground);
+}
+
+.dark .rich-editor .ql-editor.ql-blank::before {
+  color: var(--muted-foreground);
+}
+
+body {
+  overflow-wrap: break-word;
+}
+
+input[type='date'],
+input[type='datetime-local'] {
+  min-width: 0;
+  max-width: 100%;
+}
+
+@media (max-width: 767.98px) {
+  :root {
+    --card-spacing: 1rem;
+  }
+
+  /* iOS приближает страницу при фокусе на поле со шрифтом меньше 16px. */
+  input:not([type='checkbox']):not([type='radio']):not([type='file']),
+  select,
+  textarea {
+    font-size: 16px;
+  }
+
+  /* Карточка с собственными отступами контента: без двойного отступа. */
+  [data-slot='card']:has(> [data-slot='card-content']:is([class~='p-0'], [class~='p-3'], [class~='p-4'])):not(:has(> [data-slot='card-header'])) {
+    padding-block: 0;
+  }
+
+  .btn-outline {
+    min-height: 2.5rem;
+    min-width: 2.5rem;
+  }
+
+  /* Таблица -> карточки: подпись каждой ячейки берётся из data-label. */
+  .mobile-cards,
+  .mobile-cards tbody,
+  .mobile-cards tr {
+    display: block;
+    width: 100%;
+  }
+
+  .mobile-cards thead {
+    display: none;
+  }
+
+  .mobile-cards tr {
+    padding: 0.75rem 1rem;
+  }
+
+  .mobile-cards td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    min-width: 0;
+    padding: 0.3rem 0;
+    text-align: right;
+  }
+
+  .mobile-cards td::before {
+    content: attr(data-label);
+    flex: none;
+    max-width: 45%;
+    color: var(--muted-foreground);
+    font-size: 0.8125rem;
+    font-weight: 400;
+    text-align: left;
+  }
+
+  .mobile-cards td:not([data-label]) {
+    display: block;
+    text-align: center;
+  }
+
+  .mobile-cards td:not([data-label])::before {
+    content: none;
+  }
+
+  .mobile-cards td:empty {
+    display: none;
+  }
+
+  /* Вариант для таблиц с большим числом колонок: значения в две колонки. */
+  .mobile-cards--grid tr {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.625rem 1rem;
+  }
+
+  .mobile-cards--grid td {
+    display: block;
+    padding: 0;
+    text-align: left;
+  }
+
+  .mobile-cards--grid td::before {
+    display: block;
+    max-width: none;
+    margin-bottom: 0.125rem;
+    font-size: 0.6875rem;
+  }
+
+  .mobile-cards--grid td[data-primary],
+  .mobile-cards--grid td[data-wide],
+  .mobile-cards--grid td:not([data-label]) {
+    grid-column: 1 / -1;
+  }
+
+  .mobile-cards--grid td[data-primary] {
+    order: -1;
+    font-size: 1rem;
+    font-weight: 600;
+  }
+
+  .mobile-cards--grid td[data-primary]::before {
+    content: none;
+  }
 }

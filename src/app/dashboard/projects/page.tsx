@@ -279,7 +279,7 @@ export default function ProjectsPage() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold mb-2">Проекты</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold mb-2">Проекты</h1>
           <p className="text-muted-foreground">
             Раздел «Проекты» в приложении (Профиль → Проекты): картинки, описание и ссылки
           </p>
@@ -301,7 +301,7 @@ export default function ProjectsPage() {
 
       <div className="grid grid-cols-1 xl:grid-cols-[320px_1fr] gap-6 items-start">
         {/* ---- list ---- */}
-        <section className="rounded-xl glass border shadow-sm p-3 space-y-3 xl:sticky xl:top-4">
+        <section className={`rounded-xl glass border shadow-sm p-3 space-y-3 xl:sticky xl:top-4 ${editingId !== null ? 'hidden xl:block' : ''}`}>
           <div className="relative">
             <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <input
@@ -365,13 +365,13 @@ export default function ProjectsPage() {
 
         {/* ---- editor ---- */}
         {editingId === null ? (
-          <section className="rounded-xl glass border shadow-sm p-10 text-center text-muted-foreground">
+          <section className="hidden xl:block rounded-xl glass border shadow-sm p-10 text-center text-muted-foreground">
             <FolderKanban className="h-10 w-10 mx-auto mb-3 opacity-60" />
             Выберите проект слева или создайте новый
           </section>
         ) : (
           <div className="grid grid-cols-1 2xl:grid-cols-[1fr_340px] gap-6 items-start">
-            <section className="rounded-xl glass border shadow-sm p-5 space-y-6">
+            <section className="min-w-0 rounded-xl glass border shadow-sm p-3 sm:p-5 space-y-6">
               <div className="flex items-center justify-between gap-3">
                 <h2 className="text-lg font-semibold">
                   {editingId === 'new' ? 'Новый проект' : `Проект #${editingId}`}
@@ -410,7 +410,7 @@ export default function ProjectsPage() {
 
               {/* Images */}
               <div className="space-y-3">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-x-3">
                   <label className="text-sm font-medium">Картинки ({form.images.length})</label>
                   <span className="text-xs text-muted-foreground">Первая — обложка в списке</span>
                 </div>
@@ -458,9 +458,9 @@ export default function ProjectsPage() {
                     onChange={(e) => setImageUrlInput(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addImageUrl())}
                     placeholder="…или вставьте ссылку на картинку"
-                    className="flex-1 px-3 py-2 rounded-lg border bg-background text-sm outline-none focus:ring-2 focus:ring-primary/40"
+                    className="flex-1 min-w-0 px-3 py-2 rounded-lg border bg-background text-sm outline-none focus:ring-2 focus:ring-primary/40"
                   />
-                  <button onClick={addImageUrl} className="btn-outline px-3 py-2 rounded-lg text-sm">
+                  <button onClick={addImageUrl} className="btn-outline shrink-0 px-3 py-2 rounded-lg text-sm">
                     Добавить
                   </button>
                 </div>
@@ -476,7 +476,7 @@ export default function ProjectsPage() {
                             Обложка
                           </span>
                         )}
-                        <div className="absolute inset-x-0 bottom-0 flex justify-between gap-1 p-1 bg-black/55 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="absolute inset-x-0 bottom-0 flex justify-between gap-1 p-1 bg-black/55 opacity-100 lg:opacity-0 group-hover:opacity-100 transition-opacity">
                           <div className="flex gap-1">
                             <button
                               title="Левее"
@@ -527,33 +527,33 @@ export default function ProjectsPage() {
                     onChange={(e) => setLinkInput(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addLink())}
                     placeholder="https://instagram.com/…"
-                    className="flex-1 px-3 py-2 rounded-lg border bg-background text-sm outline-none focus:ring-2 focus:ring-primary/40"
+                    className="flex-1 min-w-0 px-3 py-2 rounded-lg border bg-background text-sm outline-none focus:ring-2 focus:ring-primary/40"
                   />
-                  <button onClick={addLink} className="btn-outline px-3 py-2 rounded-lg text-sm flex items-center gap-1">
+                  <button onClick={addLink} className="btn-outline shrink-0 px-3 py-2 rounded-lg text-sm flex items-center gap-1">
                     <Plus className="h-4 w-4" /> Добавить
                   </button>
                 </div>
                 {form.links.length > 0 && (
                   <ul className="space-y-2">
                     {form.links.map((link, i) => (
-                      <li key={i} className="flex items-center gap-2">
-                        <Link2 className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                      <li key={i} className="flex flex-wrap items-center justify-end gap-1 sm:flex-nowrap sm:gap-2">
+                        <Link2 className="hidden sm:block h-4 w-4 text-muted-foreground flex-shrink-0" />
                         <input
                           value={link}
                           onChange={(e) =>
                             patch({ links: form.links.map((l, j) => (j === i ? e.target.value : l)) })
                           }
-                          className={`flex-1 min-w-0 px-2 py-1.5 rounded-md border bg-background text-sm outline-none focus:ring-2 focus:ring-primary/40 ${
+                          className={`w-full sm:w-auto sm:flex-1 min-w-0 px-2 py-1.5 rounded-md border bg-background text-sm outline-none focus:ring-2 focus:ring-primary/40 ${
                             isValidUrl(link) ? '' : 'border-red-500'
                           }`}
                         />
-                        <a href={link} target="_blank" rel="noreferrer" className="p-1.5 rounded hover:bg-muted" title="Открыть">
+                        <a href={link} target="_blank" rel="noreferrer" className="p-2 sm:p-1.5 rounded hover:bg-muted" title="Открыть">
                           <ExternalLink className="h-4 w-4" />
                         </a>
                         <button
                           disabled={i === 0}
                           onClick={() => patch({ links: move(form.links, i, i - 1) })}
-                          className="p-1.5 rounded hover:bg-muted disabled:opacity-30"
+                          className="p-2 sm:p-1.5 rounded hover:bg-muted disabled:opacity-30"
                           title="Выше"
                         >
                           <ArrowLeft className="h-4 w-4 rotate-90" />
@@ -561,14 +561,14 @@ export default function ProjectsPage() {
                         <button
                           disabled={i === form.links.length - 1}
                           onClick={() => patch({ links: move(form.links, i, i + 1) })}
-                          className="p-1.5 rounded hover:bg-muted disabled:opacity-30"
+                          className="p-2 sm:p-1.5 rounded hover:bg-muted disabled:opacity-30"
                           title="Ниже"
                         >
                           <ArrowRight className="h-4 w-4 rotate-90" />
                         </button>
                         <button
                           onClick={() => patch({ links: form.links.filter((_, j) => j !== i) })}
-                          className="p-1.5 rounded hover:bg-red-500/10 text-red-600"
+                          className="p-2 sm:p-1.5 rounded hover:bg-red-500/10 text-red-600"
                           title="Убрать"
                         >
                           <Trash2 className="h-4 w-4" />
@@ -592,7 +592,7 @@ export default function ProjectsPage() {
                     Удалить проект
                   </button>
                 ) : <span />}
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   {dirty && (
                     <button
                       onClick={() => { setForm(original); setError(null); }}
@@ -630,7 +630,7 @@ function ProjectPreview({ project }: { project: ProjectInput }) {
         <Smartphone className="h-3.5 w-3.5" /> Так увидят в приложении
       </div>
       <div className="mx-auto w-full max-w-[340px] rounded-[2rem] border-[6px] border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 overflow-hidden shadow-xl">
-        <div className="h-[600px] overflow-y-auto">
+        <div className="h-[500px] sm:h-[600px] overflow-y-auto">
           <div className="px-4 pt-4 pb-2 flex items-center gap-2 text-sm font-semibold">
             <ArrowLeft className="h-4 w-4" />
             <span className="truncate">{project.title || 'Название проекта'}</span>

@@ -57,7 +57,7 @@ function AcademicProgressUrlCard(): JSX.Element {
           onChange={(e) => setUrl(e.target.value)}
           disabled={loading || saving}
           placeholder="https://study.tj"
-          className="flex-1 px-3 py-2 rounded-lg border bg-background text-sm outline-none focus:ring-2 focus:ring-primary/40"
+          className="flex-1 min-w-0 px-3 py-2 rounded-lg border bg-background text-sm outline-none focus:ring-2 focus:ring-primary/40"
         />
         <button
           onClick={handleSave}
@@ -140,8 +140,8 @@ export default function Page(): JSX.Element {
   }
 
   return (
-    <main className="container py-8">
-      <header className="mb-6 flex items-center justify-between gap-4">
+    <main className="mx-auto w-full max-w-[1400px] py-1 md:py-8">
+      <header className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
         <div>
           <h1 className="text-2xl font-semibold">Уровни (Degree Translations)</h1>
           <p className="text-sm text-muted-foreground mt-1">Список всех уровней с переводами.</p>
@@ -160,7 +160,7 @@ export default function Page(): JSX.Element {
       <AcademicProgressUrlCard />
 
       {state.status === 'loading' && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6">
           {Array.from({ length: 6 }).map((_, i) => (
             <div
               key={i}
@@ -187,7 +187,7 @@ export default function Page(): JSX.Element {
           {state.data.length === 0 ? (
             <div className="p-6 rounded-lg bg-card text-card-foreground">Нет данных.</div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6">
               {state.data.map((item) => (
                 <DegreeCard 
                   key={item.id} 
@@ -242,8 +242,8 @@ function DegreeCard({ item, onEdit }: {
 
   return (
     <article className="rounded-2xl p-5 bg-card text-card-foreground border shadow-sm hover:shadow-lg transition-shadow duration-200">
-      <div className="flex items-start justify-between gap-4">
-        <div>
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-1 sm:gap-4">
+        <div className="min-w-0">
           <h3 className="text-lg font-semibold mb-1">Уровень #{item.id}</h3>
           <p className="text-sm text-muted-foreground">Создано: {created}</p>
         </div>

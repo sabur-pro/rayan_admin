@@ -79,7 +79,7 @@ export default function SemesterList() {
   }
 
   return (
-    <div className="p-6 animate-in">
+    <div className="py-6 lg:p-6 animate-in">
       <h2 className="text-2xl font-semibold mb-6 text-foreground">Список семестров</h2>
       
       {semesters.length === 0 ? (
@@ -113,7 +113,7 @@ export default function SemesterList() {
           </div>
 
           {totalPages > 1 && (
-            <div className="mt-8 flex justify-center items-center gap-4">
+            <div className="mt-8 flex flex-wrap justify-center items-center gap-3 sm:gap-4">
               <button
                 onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                 disabled={currentPage === 1}

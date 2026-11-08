@@ -117,12 +117,12 @@ export default function OrdersPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <Button variant="outline" className="btn-outline" onClick={() => router.push('/dashboard/market')}>
+        <div className="flex items-center gap-3 min-w-0">
+          <Button variant="outline" className="btn-outline shrink-0" onClick={() => router.push('/dashboard/market')}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
-            <h1 className="text-3xl font-bold flex items-center gap-3">
+            <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-3">
               <ClipboardList className="h-8 w-8" />Заказы
             </h1>
             <p className="text-muted-foreground">
@@ -134,7 +134,7 @@ export default function OrdersPage() {
         {role === 'admin' && (
           <Card>
             <CardContent className="p-3 flex items-end gap-2">
-              <div>
+              <div className="min-w-0 flex-1 sm:flex-none">
                 <label className="text-xs font-medium mb-1 flex items-center gap-1 text-muted-foreground">
                   <Truck className="h-3.5 w-3.5" />Стоимость доставки (c.)
                 </label>
@@ -144,7 +144,7 @@ export default function OrdersPage() {
                   min="0"
                   value={deliveryCost}
                   onChange={e => setDeliveryCost(e.target.value)}
-                  className="w-40"
+                  className="w-full sm:w-40"
                   placeholder="0"
                 />
               </div>
@@ -203,10 +203,11 @@ export default function OrdersPage() {
               <CardContent className="p-0">
                 {/* Order Header */}
                 <div
-                  className="flex items-center gap-4 p-4 cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+                  className="p-3 sm:p-4 md:flex md:items-center md:gap-4 cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
                   onClick={() => setExpandedOrder(isExpanded ? null : order.id)}
                 >
-                  <div className={`p-2.5 rounded-xl ${cfg.bg}`}>
+                  <div className="flex items-center gap-3 md:contents">
+                  <div className={`shrink-0 p-2.5 rounded-xl ${cfg.bg}`}>
                     <StatusIcon className={`h-5 w-5 ${cfg.color}`} />
                   </div>
 
@@ -217,7 +218,7 @@ export default function OrdersPage() {
                         {cfg.label}
                       </span>
                     </div>
-                    <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1">
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-sm text-muted-foreground mt-1">
                       <span>{formatDate(order.created_at)}</span>
                       {order.user_phone && (
                         <span className="flex items-center gap-1">
@@ -228,7 +229,11 @@ export default function OrdersPage() {
                     </div>
                   </div>
 
-                  <div className="text-right">
+                  <ChevronDown className={`h-5 w-5 shrink-0 text-muted-foreground transition-transform md:hidden ${isExpanded ? 'rotate-180' : ''}`} />
+                  </div>
+
+                  <div className="mt-3 flex items-center justify-between gap-3 md:mt-0 md:contents">
+                  <div className="min-w-0 md:text-right">
                     <div className="text-xl font-bold">{(order.total_price + (order.delivery_cost || 0)).toFixed(2)} с.</div>
                     {order.delivery_cost > 0 && (
                       <div className="text-xs text-muted-foreground mt-0.5">вкл. доставку {order.delivery_cost.toFixed(2)} с.</div>
@@ -241,7 +246,7 @@ export default function OrdersPage() {
                   </div>
 
                   {/* Status Changer */}
-                  <div className="relative" onClick={e => e.stopPropagation()}>
+                  <div className="relative shrink-0" onClick={e => e.stopPropagation()}>
                     <Button
                       variant="outline"
                       size="sm"
@@ -281,12 +286,14 @@ export default function OrdersPage() {
                     )}
                   </div>
 
-                  <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                  </div>
+
+                  <ChevronDown className={`hidden h-5 w-5 shrink-0 text-muted-foreground transition-transform md:block ${isExpanded ? 'rotate-180' : ''}`} />
                 </div>
 
                 {/* Expanded Details */}
                 {isExpanded && (
-                  <div className="border-t px-4 pb-4 pt-3 space-y-3">
+                  <div className="border-t px-3 sm:px-4 pb-4 pt-3 space-y-3">
                     {/* Delivery / contact info */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm bg-muted/50 rounded-lg p-3">
                       {order.phone && (
@@ -343,7 +350,7 @@ export default function OrdersPage() {
                               </p>
                             )}
                           </div>
-                          <div className="text-right">
+                          <div className="shrink-0 text-right">
                             <div className="text-sm font-semibold">
                               {(item.price * item.quantity).toFixed(2)} с.
                             </div>

@@ -116,7 +116,7 @@ export default function SellersPage() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold mb-2 flex items-center gap-3">
+          <h1 className="text-2xl sm:text-3xl font-bold mb-2 flex items-center gap-3">
             <Users className="h-8 w-8" />
             Продавцы
           </h1>
@@ -138,7 +138,7 @@ export default function SellersPage() {
       <Card className="glass">
         <CardContent className="p-0">
           <div className="overflow-x-auto">
-            <table className="w-full">
+            <table className="w-full mobile-cards">
               <thead className="bg-muted/50">
                 <tr>
                   <th className="px-4 py-3 text-left text-sm font-medium">ID</th>
@@ -152,10 +152,10 @@ export default function SellersPage() {
               <tbody className="divide-y">
                 {sellers.map((seller) => (
                   <tr key={seller.id} className="hover:bg-muted/30 transition-colors">
-                    <td className="px-4 py-3 text-sm">{seller.id}</td>
-                    <td className="px-4 py-3 text-sm font-medium">{seller.login}</td>
-                    <td className="px-4 py-3 text-sm">{seller.name || '—'}</td>
-                    <td className="px-4 py-3 text-sm">
+                    <td data-label="ID" className="px-4 py-3 text-sm">{seller.id}</td>
+                    <td data-label="Логин" className="px-4 py-3 text-sm font-medium">{seller.login}</td>
+                    <td data-label="Имя" className="px-4 py-3 text-sm">{seller.name || '—'}</td>
+                    <td data-label="Баннеры" className="px-4 py-3 text-sm">
                       {seller.can_create_banner ? (
                         <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-500/10 text-green-600 rounded-full text-xs">
                           <ShieldCheck className="h-3 w-3" />
@@ -168,10 +168,10 @@ export default function SellersPage() {
                         </span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-sm text-muted-foreground">
+                    <td data-label="Создан" className="px-4 py-3 text-sm text-muted-foreground">
                       {new Date(seller.created_at).toLocaleDateString('ru-RU')}
                     </td>
-                    <td className="px-4 py-3 text-right">
+                    <td data-label="Действия" className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-2">
                         <button
                           onClick={() => openEdit(seller)}
@@ -210,9 +210,9 @@ export default function SellersPage() {
 
       {/* Модальное окно создания */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black/70 z-[100] flex items-center justify-center p-4" onClick={() => setShowCreateModal(false)}>
+        <div className="modal-overlay fixed inset-0 bg-black/70 z-[100] flex items-center justify-center p-4" onClick={() => setShowCreateModal(false)}>
           <Card className="w-full max-w-md animate-in" onClick={(e) => e.stopPropagation()}>
-            <CardContent className="p-6">
+            <CardContent className="p-4 sm:p-6">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-semibold">Новый продавец</h2>
                 <button onClick={() => setShowCreateModal(false)} className="text-muted-foreground hover:text-foreground">
@@ -259,9 +259,9 @@ export default function SellersPage() {
 
       {/* Модальное окно редактирования */}
       {editingSeller && (
-        <div className="fixed inset-0 bg-black/70 z-[100] flex items-center justify-center p-4" onClick={() => setEditingSeller(null)}>
+        <div className="modal-overlay fixed inset-0 bg-black/70 z-[100] flex items-center justify-center p-4" onClick={() => setEditingSeller(null)}>
           <Card className="w-full max-w-md animate-in" onClick={(e) => e.stopPropagation()}>
-            <CardContent className="p-6">
+            <CardContent className="p-4 sm:p-6">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-semibold">Редактирование</h2>
                 <button onClick={() => setEditingSeller(null)} className="text-muted-foreground hover:text-foreground">

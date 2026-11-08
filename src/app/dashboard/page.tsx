@@ -36,7 +36,7 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold mb-2">Дашборд</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold mb-2">Дашборд</h1>
         <p className="text-muted-foreground">Обзор статистики и активности системы</p>
       </div>
       

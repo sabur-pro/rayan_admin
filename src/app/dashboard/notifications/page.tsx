@@ -354,12 +354,12 @@ export default function NotificationsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <Bell className="h-6 w-6 text-primary" />
           <h1 className="text-2xl font-semibold">Уведомления</h1>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button variant="outline" onClick={() => { loadCampaigns(); loadStats(); }}><RefreshCw className="h-4 w-4 mr-2" />Обновить</Button>
           <Button onClick={openCreate}><Plus className="h-4 w-4 mr-2" />Создать рассылку</Button>
         </div>
@@ -389,7 +389,7 @@ export default function NotificationsPage() {
 
       {showForm && (
         <Card>
-          <CardContent className="p-6 space-y-6">
+          <CardContent className="p-4 sm:p-6 space-y-6">
             <h2 className="text-lg font-semibold">{form.id ? 'Редактировать рассылку' : 'Новая рассылка'}</h2>
 
             {/* Тексты по языкам (табы) */}
@@ -441,7 +441,7 @@ export default function NotificationsPage() {
             {/* Аудитория */}
             <div className="space-y-3">
               <div className="text-sm font-medium text-muted-foreground">Аудитория</div>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <Button type="button" variant={form.audienceType === 'all' ? 'default' : 'outline'} size="sm"
                   onClick={() => setForm((f) => ({ ...f, audienceType: 'all' }))}>
                   <Users2 className="h-4 w-4 mr-2" />Все пользователи
@@ -468,7 +468,7 @@ export default function NotificationsPage() {
                     <div className="border rounded-md max-h-48 overflow-auto divide-y">
                       {userResults.map((u) => (
                         <button key={u.id} type="button"
-                          className="w-full text-left px-3 py-2 hover:bg-accent flex justify-between items-center"
+                          className="w-full text-left px-3 py-2 hover:bg-accent flex justify-between items-center gap-3"
                           onClick={() => addUser(u)}>
                           <span>{u.login}</span>
                           <span className="text-xs text-muted-foreground">{u.phone}</span>
@@ -546,7 +546,7 @@ export default function NotificationsPage() {
                 </div>
               )}
 
-              <div className="text-sm text-muted-foreground flex items-center gap-2">
+              <div className="text-sm text-muted-foreground flex flex-wrap items-center gap-x-2 gap-y-1">
                 {previewLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Users2 className="h-4 w-4" />}
                 Охват: <b>{preview?.recipient_count ?? '—'}</b> пользователей,
                 <b>{preview?.device_count ?? '—'}</b> устройств
@@ -613,7 +613,7 @@ export default function NotificationsPage() {
                 onChange={(e) => setForm((f) => ({ ...f, data: e.target.value }))} />
             </div>
 
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Button onClick={handleSave} disabled={saving}>
                 {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Send className="h-4 w-4 mr-2" />}
                 {form.id ? 'Сохранить' : form.scheduleType === 'now' ? 'Создать и отправить' : 'Создать'}
@@ -638,11 +638,11 @@ export default function NotificationsPage() {
             return (
               <Card key={c.id}>
                 <CardContent className="p-4">
-                  <div className="flex items-start justify-between gap-4">
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-4">
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className={`text-xs px-2 py-0.5 rounded-full ${st.cls}`}>{st.label}</span>
-                        <span className="font-medium truncate">{title}</span>
+                        <span className="font-medium min-w-0 sm:truncate">{title}</span>
                         {c.schedule_type === 'recurring' && (
                           <span className="text-xs text-muted-foreground inline-flex items-center gap-1">
                             <Repeat className="h-3 w-3" />{c.cron_expr}
@@ -661,7 +661,7 @@ export default function NotificationsPage() {
                         {c.last_run_at ? ` · последняя: ${fmtDate(c.last_run_at)}` : ''}
                       </div>
                     </div>
-                    <div className="flex gap-1 shrink-0">
+                    <div className="flex justify-end gap-1 shrink-0 max-sm:border-t max-sm:pt-2">
                       <Button size="sm" variant="ghost" title="Отправить сейчас" onClick={() => handleSend(c)}>
                         <Send className="h-4 w-4" />
                       </Button>

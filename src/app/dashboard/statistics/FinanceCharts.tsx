@@ -17,8 +17,11 @@ import {
 } from 'recharts';
 import type { MonthlyPoint } from '../../../../types/finance';
 import { INCOME_SOURCE_LABELS, EXPENSE_CATEGORY_LABELS } from '../../../../types/finance';
+import { useIsMobile } from '@/lib/useIsMobile';
 
 const fmt = (v: number) => `${Number(v).toLocaleString('ru-RU')} c`;
+
+const compactNumber = new Intl.NumberFormat('ru-RU', { notation: 'compact', maximumFractionDigits: 1 });
 
 function monthLabel(month: string): string {
   // "2026-05" -> "05.2026"
@@ -35,6 +38,7 @@ const tooltipStyle: React.CSSProperties = {
 };
 
 export function MonthlyChart({ data }: { data: MonthlyPoint[] | null | undefined }) {
+  const isMobile = useIsMobile();
   const chartData = (data ?? []).map((d) => ({
     month: monthLabel(d.month),
     Доход: d.income,
@@ -47,15 +51,25 @@ export function MonthlyChart({ data }: { data: MonthlyPoint[] | null | undefined
   }
 
   return (
-    <ResponsiveContainer width="100%" height={320}>
-      <ComposedChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+    <ResponsiveContainer width="100%" height={isMobile ? 260 : 320}>
+      <ComposedChart data={chartData} margin={{ top: 10, right: isMobile ? 0 : 10, left: 0, bottom: 0 }}>
         <CartesianGrid strokeDasharray="3 3" stroke="rgba(128,128,128,0.15)" />
-        <XAxis dataKey="month" tick={{ fontSize: 12 }} stroke="rgba(128,128,128,0.6)" />
-        <YAxis tick={{ fontSize: 12 }} stroke="rgba(128,128,128,0.6)" width={70} />
+        <XAxis
+          dataKey="month"
+          tick={{ fontSize: isMobile ? 10 : 12 }}
+          tickFormatter={isMobile ? (m: string) => `${m.slice(0, 3)}${m.slice(-2)}` : undefined}
+          stroke="rgba(128,128,128,0.6)"
+        />
+        <YAxis
+          tick={{ fontSize: isMobile ? 10 : 12 }}
+          tickFormatter={isMobile ? (v: number) => compactNumber.format(v) : undefined}
+          stroke="rgba(128,128,128,0.6)"
+          width={isMobile ? 48 : 70}
+        />
         <Tooltip formatter={(value) => fmt(Number(value) || 0)} contentStyle={tooltipStyle} />
         <Legend wrapperStyle={{ fontSize: 12 }} />
-        <Bar dataKey="Доход" fill="#22c55e" radius={[4, 4, 0, 0]} barSize={18} />
-        <Bar dataKey="Расход" fill="#ef4444" radius={[4, 4, 0, 0]} barSize={18} />
+        <Bar dataKey="Доход" fill="#22c55e" radius={[4, 4, 0, 0]} maxBarSize={18} />
+        <Bar dataKey="Расход" fill="#ef4444" radius={[4, 4, 0, 0]} maxBarSize={18} />
         <Line type="monotone" dataKey="Прибыль" stroke="#3b82f6" strokeWidth={2.5} dot={{ r: 3 }} />
       </ComposedChart>
     </ResponsiveContainer>
@@ -86,6 +100,7 @@ function BreakdownPie({
   colors: Record<string, string>;
   emptyText: string;
 }) {
+  const isMobile = useIsMobile();
   const filtered = data.filter((d) => d.value > 0);
   if (filtered.length === 0) {
     return <div className="text-center py-12 text-muted-foreground text-sm">{emptyText}</div>;
@@ -102,7 +117,7 @@ function BreakdownPie({
           outerRadius={90}
           innerRadius={45}
           paddingAngle={2}
-          label={(entry) => `${(entry as { name: string }).name}`}
+          label={isMobile ? false : (entry) => `${(entry as { name: string }).name}`}
           labelLine={false}
         >
           {filtered.map((entry) => (
@@ -110,6 +125,7 @@ function BreakdownPie({
           ))}
         </Pie>
         <Tooltip formatter={(value) => fmt(Number(value) || 0)} contentStyle={tooltipStyle} />
+        {isMobile && <Legend wrapperStyle={{ fontSize: 12 }} />}
       </PieChart>
     </ResponsiveContainer>
   );

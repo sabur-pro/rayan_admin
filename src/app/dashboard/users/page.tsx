@@ -3,7 +3,7 @@
 
 import React, { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Users, Search, GraduationCap, Building2, BookOpen, Calendar, CreditCard, Check, X, Loader2, MessageSquare, Star, LogOut } from 'lucide-react';
+import { Users, Search, GraduationCap, Building2, BookOpen, Calendar, CreditCard, Check, ChevronDown, X, Loader2, MessageSquare, Star, LogOut } from 'lucide-react';
 import { getUsers, getSubscriptions, updateSubscriptionStatus, getSubscriptionStats, resetUserSessions } from '@/lib/user';
 import { api } from '@/lib/api-client';
 import { getCourses } from '@/lib/course';
@@ -86,6 +86,7 @@ export default function UsersPage() {
 
   // Табы
   const [activeTab, setActiveTab] = useState<'users' | 'subscriptions' | 'reviews'>('users');
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   // Подписки
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
@@ -496,33 +497,33 @@ export default function UsersPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold mb-2">Пользователи</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold mb-2">Пользователи</h1>
           <p className="text-muted-foreground">Управление пользователями системы</p>
         </div>
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 bg-muted/50 p-1 rounded-lg">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+          <div className="flex items-center gap-1 sm:gap-2 bg-muted/50 p-1 rounded-lg overflow-x-auto">
             <button
               onClick={() => setActiveTab('users')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-md transition-colors ${activeTab === 'users' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
+              className={`flex flex-1 sm:flex-none items-center justify-center gap-2 whitespace-nowrap px-2.5 sm:px-4 py-2 rounded-md text-sm sm:text-base transition-colors ${activeTab === 'users' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
                 }`}
             >
-              <Users className="h-4 w-4" />
+              <Users className="hidden sm:block h-4 w-4" />
               Пользователи
             </button>
             <button
               onClick={() => setActiveTab('subscriptions')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-md transition-colors ${activeTab === 'subscriptions' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
+              className={`flex flex-1 sm:flex-none items-center justify-center gap-2 whitespace-nowrap px-2.5 sm:px-4 py-2 rounded-md text-sm sm:text-base transition-colors ${activeTab === 'subscriptions' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
                 }`}
             >
-              <CreditCard className="h-4 w-4" />
+              <CreditCard className="hidden sm:block h-4 w-4" />
               Подписки
             </button>
             <button
               onClick={() => setActiveTab('reviews')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-md transition-colors ${activeTab === 'reviews' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
+              className={`flex flex-1 sm:flex-none items-center justify-center gap-2 whitespace-nowrap px-2.5 sm:px-4 py-2 rounded-md text-sm sm:text-base transition-colors ${activeTab === 'reviews' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
                 }`}
             >
-              <MessageSquare className="h-4 w-4" />
+              <MessageSquare className="hidden sm:block h-4 w-4" />
               Отзывы
             </button>
           </div>
@@ -540,7 +541,7 @@ export default function UsersPage() {
       {activeTab === 'users' && (
         <>
           {/* Статусы пользователей — клик по карточке фильтрует список */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
             {USER_STATUSES.map((st) => {
               const selected = userStatus === st.value;
               return (
@@ -575,8 +576,8 @@ export default function UsersPage() {
 
           <Card className="glass">
             <CardContent className="p-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                <div className="flex flex-col gap-1">
+              <div className={`grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 ${filtersOpen ? '' : 'max-sm:[&>*:not(:first-child)]:hidden'}`}>
+                <div className="col-span-2 sm:col-span-1 flex flex-col gap-1">
                   <label className="text-sm text-muted-foreground flex items-center gap-1">
                     <Search className="h-4 w-4" />
                     Логин
@@ -652,13 +653,22 @@ export default function UsersPage() {
                   </select>
                 </div>
               </div>
+              <button
+                type="button"
+                onClick={() => setFiltersOpen((open) => !open)}
+                aria-expanded={filtersOpen}
+                className="mt-3 flex w-full items-center justify-center gap-1 rounded-md border px-3 py-2 text-sm sm:hidden"
+              >
+                {filtersOpen ? 'Скрыть фильтры' : 'Все фильтры'}
+                <ChevronDown className={`h-4 w-4 transition-transform ${filtersOpen ? 'rotate-180' : ''}`} />
+              </button>
             </CardContent>
           </Card>
 
           <Card className="glass">
             <CardContent className="p-0">
               <div className="overflow-x-auto">
-                <table className="w-full">
+                <table className="w-full mobile-cards mobile-cards--grid">
                   <thead className="bg-muted/50">
                     <tr>
                       <th className="px-4 py-3 text-left text-sm font-medium">ID</th>
@@ -681,14 +691,14 @@ export default function UsersPage() {
                     {!loading && !error && users.length === 0 && <tr><td colSpan={12} className="px-4 py-8 text-center text-muted-foreground">Пользователи не найдены</td></tr>}
                     {!loading && !error && users.map((user) => (
                       <tr key={user.id} className="hover:bg-muted/30 transition-colors">
-                        <td className="px-4 py-3 text-sm">{user.id}</td>
-                        <td className="px-4 py-3 text-sm font-medium">{user.login}</td>
-                        <td className="px-4 py-3 text-sm">
+                        <td data-label="ID" className="px-4 py-3 text-sm">{user.id}</td>
+                        <td data-primary data-label="Логин" className="px-4 py-3 text-sm font-medium">{user.login}</td>
+                        <td data-label="Роль" className="px-4 py-3 text-sm">
                           <span className={`px-2 py-1 rounded-full text-xs ${user.role === 'admin' ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
                             {user.role === 'admin' ? 'Админ' : 'Пользователь'}
                           </span>
                         </td>
-                        <td className="px-4 py-3 text-sm">
+                        <td data-label="Статус" className="px-4 py-3 text-sm">
                           {(() => {
                             const st = USER_STATUSES.find((x) => x.value === user.subscription_status);
                             return st ? (
@@ -696,19 +706,19 @@ export default function UsersPage() {
                             ) : '-';
                           })()}
                         </td>
-                        <td className="px-4 py-3 text-sm">{user.lang_code?.toUpperCase()}</td>
-                        <td className="px-4 py-3 text-sm">{user.course_id > 0 ? 7 - user.course_id : '-'}</td>
-                        <td className="px-4 py-3 text-sm">{user.semester_id}</td>
-                        <td className="px-4 py-3 text-sm">{user.university_id}</td>
-                        <td className="px-4 py-3 text-sm">{user.faculty_id}</td>
-                        <td className="px-4 py-3 text-sm">{user.phone || '-'}</td>
-                        <td className="px-4 py-3 text-sm text-muted-foreground">{new Date(user.created_at).toLocaleDateString('ru-RU')}</td>
-                        <td className="px-4 py-3 text-sm">
+                        <td data-label="Язык" className="px-4 py-3 text-sm">{user.lang_code?.toUpperCase()}</td>
+                        <td data-label="Курс" className="px-4 py-3 text-sm">{user.course_id > 0 ? 7 - user.course_id : '-'}</td>
+                        <td data-label="Семестр" className="px-4 py-3 text-sm">{user.semester_id}</td>
+                        <td data-label="Университет" className="px-4 py-3 text-sm">{user.university_id}</td>
+                        <td data-label="Факультет" className="px-4 py-3 text-sm">{user.faculty_id}</td>
+                        <td data-label="Телефон" className="px-4 py-3 text-sm">{user.phone || '-'}</td>
+                        <td data-label="Создан" className="px-4 py-3 text-sm text-muted-foreground">{new Date(user.created_at).toLocaleDateString('ru-RU')}</td>
+                        <td data-wide data-label="Сессии" className="px-4 py-3 text-sm">
                           <button
                             onClick={() => handleResetSessions(user)}
                             disabled={resettingUserIds.has(user.id)}
                             title="Очистить сессии — пользователь сможет войти с нового устройства, старые устройства потеряют доступ"
-                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-red-500 hover:bg-red-600 text-white rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                            className="flex w-full md:w-auto items-center justify-center gap-1.5 px-3 py-2 md:py-1.5 text-xs bg-red-500 hover:bg-red-600 text-white rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                           >
                             {resettingUserIds.has(user.id) ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <LogOut className="h-3.5 w-3.5" />}
                             Очистить
@@ -725,7 +735,7 @@ export default function UsersPage() {
           {totalCount > 0 && (
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
               <div className="text-sm text-muted-foreground">Страница {page} из {totalPages} • Всего: {totalCount}</div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center justify-center gap-2">
                 <button onClick={() => setPage(1)} disabled={page === 1} className="btn-outline px-3 py-1 rounded disabled:opacity-50">«1</button>
                 <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} className="btn-outline px-3 py-1 rounded disabled:opacity-50">‹</button>
                 {generatePageRange(page, totalPages, 5).map((p) => (
@@ -743,7 +753,7 @@ export default function UsersPage() {
       {activeTab === 'subscriptions' && (
         <>
           {/* Статистика */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
             {[
               ...USER_STATUSES.map((st) => ({ label: st.label, value: subsStats?.[st.value], color: st.color, bg: st.bg })),
             ].map((s) => (
@@ -841,13 +851,13 @@ export default function UsersPage() {
                   style={getStatusBorderStyle(sub.status)}
                 >
                   <CardContent className="p-4">
-                    <div className="flex items-start justify-between mb-3">
-                      <div>
+                    <div className="flex items-start justify-between gap-2 mb-3">
+                      <div className="min-w-0">
                         <div className="font-medium">{sub.user?.login || 'Неизвестный пользователь'}</div>
                         {sub.user?.phone && <div className="text-xs font-semibold text-primary">{sub.user.phone}</div>}
                         <div className="text-xs text-muted-foreground">ID подписки: {sub.id}</div>
                       </div>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusBgColor(sub.status)}`}>
+                      <span className={`shrink-0 px-2 py-1 rounded-full text-xs font-medium ${getStatusBgColor(sub.status)}`}>
                         {getStatusLabel(sub.status)}
                       </span>
                     </div>
@@ -864,13 +874,13 @@ export default function UsersPage() {
                         <span className="text-muted-foreground">Окончание:</span>
                         <span>{new Date(sub.end_date).toLocaleDateString('ru-RU')}</span>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Период:</span>
-                        <span className="font-medium text-primary">{calculatePeriod(sub.start_date, sub.end_date)}</span>
+                      <div className="flex justify-between gap-3">
+                        <span className="shrink-0 text-muted-foreground">Период:</span>
+                        <span className="text-right font-medium text-primary">{calculatePeriod(sub.start_date, sub.end_date)}</span>
                       </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-muted-foreground">Осталось:</span>
-                        <span className={`font-semibold ${remaining.isExpired ? 'text-red-500' : 'text-green-500'}`}>
+                      <div className="flex justify-between items-center gap-3">
+                        <span className="shrink-0 text-muted-foreground">Осталось:</span>
+                        <span className={`text-right font-semibold ${remaining.isExpired ? 'text-red-500' : 'text-green-500'}`}>
                           {remaining.text}
                         </span>
                       </div>
@@ -953,12 +963,12 @@ export default function UsersPage() {
                   style={getStatusBorderStyle(review.status === 'in_processing' ? 'pending' : review.status === 'rejected' ? 'denied' : review.status)}
                 >
                   <CardContent className="p-4 flex-1 flex flex-col">
-                    <div className="flex items-start justify-between mb-3">
-                      <div>
+                    <div className="flex items-start justify-between gap-2 mb-3">
+                      <div className="min-w-0">
                         <div className="font-medium">Пользователь: {review.user_id}</div>
                         <div className="text-xs text-muted-foreground">ID отзыва: {review.id}</div>
                       </div>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusBgColor(review.status)}`}>
+                      <span className={`shrink-0 px-2 py-1 rounded-full text-xs font-medium ${getStatusBgColor(review.status)}`}>
                         {review.status === 'in_processing' ? 'На рассмотрении' : review.status === 'accepted' ? 'Одобрен' : 'Отклонен'}
                       </span>
                     </div>
@@ -1010,7 +1020,7 @@ export default function UsersPage() {
           {reviewsTotalCount > 0 && (
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
               <div className="text-sm text-muted-foreground">Страница {reviewsPage} из {reviewsTotalPages} • Всего: {reviewsTotalCount}</div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center justify-center gap-2">
                 <button onClick={() => setReviewsPage(1)} disabled={reviewsPage === 1} className="btn-outline px-3 py-1 rounded disabled:opacity-50">«1</button>
                 <button onClick={() => setReviewsPage((p) => Math.max(1, p - 1))} disabled={reviewsPage === 1} className="btn-outline px-3 py-1 rounded disabled:opacity-50">‹</button>
                 {generatePageRange(reviewsPage, reviewsTotalPages, 5).map((p) => (
@@ -1027,7 +1037,7 @@ export default function UsersPage() {
       {/* Модальное окно для просмотра чека */}
       {proofPhotoModal && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 overflow-auto"
+          className="modal-overlay fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 overflow-auto"
           onClick={() => setProofPhotoModal(null)}
         >
           <div className="relative flex flex-col items-center" onClick={(e) => e.stopPropagation()}>
@@ -1056,7 +1066,7 @@ export default function UsersPage() {
             <img
               src={proofPhotoModal}
               alt="Чек оплаты"
-              className="max-w-[95vw] max-h-[90vh] object-contain rounded-lg shadow-2xl"
+              className="max-w-full max-h-[80dvh] object-contain rounded-lg shadow-2xl"
               style={{ width: 'auto', height: 'auto' }}
             />
           </div>

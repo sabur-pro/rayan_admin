@@ -61,7 +61,7 @@ export function AcademicSelectors({
   const selectClass = "w-full px-3 py-2 rounded-md border bg-transparent focus:outline-none focus:ring-2 focus:ring-primary text-sm";
 
   return (
-    <div className="grid grid-cols-2 gap-3">
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
       <div>
         <label className="text-sm font-medium mb-1 block">Университет</label>
         <select
